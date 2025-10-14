@@ -1,23 +1,45 @@
 'use client'
 
 import { useState } from 'react'
+import { Toaster, toast } from 'sonner'
 import Navigation from '@/components/Navigation'
 import HomePage from '@/components/pages/HomePage'
 import CartPage from '@/components/pages/CartPage'
 import CheckoutPage from '@/components/pages/CheckoutPage'
 import AdminPage from '@/components/pages/AdminPage'
-import Toast from '@/components/Toast'
 
 type Page = 'home' | 'cart' | 'checkout' | 'admin'
 
 export default function Home() {
   const [currentPage, setCurrentPage] = useState<Page>('home')
   const [cartCount, setCartCount] = useState(0)
-  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
 
   const showToast = (message: string, type: 'success' | 'error') => {
-    setToast({ message, type })
-    setTimeout(() => setToast(null), 3000)
+    if (type === 'success') {
+      toast.success(message, {
+        duration: 3000,
+        style: {
+          background: '#10b981',
+          color: 'white',
+          border: 'none',
+          borderRadius: '12px',
+          fontSize: '14px',
+          fontWeight: '600',
+        },
+      })
+    } else {
+      toast.error(message, {
+        duration: 3000,
+        style: {
+          background: '#ef4444',
+          color: 'white',
+          border: 'none',
+          borderRadius: '12px',
+          fontSize: '14px',
+          fontWeight: '600',
+        },
+      })
+    }
   }
 
   const updateCartCount = async () => {
@@ -37,6 +59,16 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <Toaster 
+        position="top-center"
+        expand={true}
+        richColors
+        closeButton
+        toastOptions={{
+          className: 'sonner-toast',
+        }}
+      />
+      
       <Navigation 
         currentPage={currentPage}
         cartCount={cartCount}
@@ -70,8 +102,6 @@ export default function Home() {
           />
         )}
       </main>
-
-      {toast && <Toast message={toast.message} type={toast.type} />}
     </div>
   )
 }
