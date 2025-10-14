@@ -1,0 +1,72 @@
+// This is your Prisma schema file for Supabase PostgreSQL
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Book {
+  id            Int         @id @default(autoincrement())
+  title         String
+  author        String
+  isbn          String?     @unique
+  price         Float
+  description   String?     @db.Text
+  stockQuantity Int         @default(0)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  orderItems    OrderItem[]
+
+  @@index([title])
+  @@index([author])
+}
+
+model CartItem {
+  id        Int      @id @default(autoincrement())
+  bookId    Int
+  quantity  Int
+  sessionId String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([sessionId])
+  @@index([bookId])
+  @@map("cart_items")
+}
+
+model Order {
+  id              Int         @id @default(autoincrement())
+  customerName    String
+  customerEmail   String
+  customerAddress String      @db.Text
+  orderDate       DateTime    @default(now())
+  totalAmount     Float
+  status          String      @default("PENDING")
+  orderItems      OrderItem[]
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  @@index([customerEmail])
+  @@index([status])
+  @@index([orderDate])
+  @@map("orders")
+}
+
+model OrderItem {
+  id       Int   @id @default(autoincrement())
+  orderId  Int
+  bookId   Int
+  quantity Int
+  price    Float
+  order    Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  book     Book  @relation(fields: [bookId], references: [id])
+
+  @@index([orderId])
+  @@index([bookId])
+  @@map("order_items")
+}
+
