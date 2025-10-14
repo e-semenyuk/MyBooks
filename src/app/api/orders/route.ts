@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get('status')
     const userId = searchParams.get('userId')
 
-    let orders
+    let orders: any[] = []
 
     // If user is logged in but not admin, only return their orders
     if (session && (session.user as any).role !== 'ADMIN') {
