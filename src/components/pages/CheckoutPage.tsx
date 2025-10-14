@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useSession } from 'next-auth/react'
 
 interface CheckoutPageProps {
   showToast: (message: string, type: 'success' | 'error') => void
@@ -9,12 +10,24 @@ interface CheckoutPageProps {
 }
 
 export default function CheckoutPage({ showToast, updateCartCount, navigateTo }: CheckoutPageProps) {
+  const { data: session } = useSession()
   const [formData, setFormData] = useState({
     customerName: '',
     customerEmail: '',
     customerAddress: '',
   })
   const [submitting, setSubmitting] = useState(false)
+
+  // Pre-fill form with user data if logged in
+  useEffect(() => {
+    if (session?.user) {
+      setFormData({
+        customerName: session.user.name || '',
+        customerEmail: session.user.email || '',
+        customerAddress: '',
+      })
+    }
+  }, [session])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({

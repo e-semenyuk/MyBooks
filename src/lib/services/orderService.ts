@@ -6,7 +6,8 @@ import { BookService } from './bookService'
 export class OrderService {
   static async createOrder(
     sessionId: string,
-    data: CreateOrderRequest
+    data: CreateOrderRequest,
+    userId?: number | null
   ): Promise<Order> {
     // Get cart items
     const cartItems = await CartService.getCartItems(sessionId)
@@ -45,6 +46,7 @@ export class OrderService {
       // Create order
       const newOrder = await tx.order.create({
         data: {
+          userId: userId || null,
           customerName: data.customerName,
           customerEmail: data.customerEmail,
           customerAddress: data.customerAddress,
@@ -136,6 +138,27 @@ export class OrderService {
           },
         },
       },
+    })
+  }
+
+  static async getOrdersByUserId(userId: number): Promise<Order[]> {
+    return await prisma.order.findMany({
+      where: { userId },
+      orderBy: { orderDate: 'desc' },
+      include: {
+        orderItems: {
+          include: {
+            book: true,
+          },
+        },
+      },
+    })
+  }
+
+  static async updateOrderStatus(id: number, status: string): Promise<Order> {
+    return await prisma.order.update({
+      where: { id },
+      data: { status },
     })
   }
 }

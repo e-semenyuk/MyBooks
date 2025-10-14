@@ -19,7 +19,10 @@
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",
+    "@types/bcryptjs": "^3.0.0",
+    "bcryptjs": "^3.0.2",
     "next": "14.0.4",
+    "next-auth": "^4.24.11",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "sonner": "^2.0.7",
