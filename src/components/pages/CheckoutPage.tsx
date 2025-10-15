@@ -66,16 +66,17 @@ export default function CheckoutPage({ showToast, updateCartCount, navigateTo }:
   }
 
   return (
-    <div>
+    <div data-testid="checkout-page">
       <h2 className="text-3xl font-bold mb-6 text-gray-900">Checkout</h2>
 
       <div className="card max-w-2xl mx-auto">
-        <form onSubmit={handleSubmit}>
+        <form data-testid="checkout-form" onSubmit={handleSubmit}>
           <div className="mb-4">
             <label htmlFor="customerName" className="block text-sm font-medium text-gray-700 mb-2">
               Full Name
             </label>
             <input
+              data-testid="checkout-name-input"
               type="text"
               id="customerName"
               name="customerName"
@@ -91,6 +92,7 @@ export default function CheckoutPage({ showToast, updateCartCount, navigateTo }:
               Email
             </label>
             <input
+              data-testid="checkout-email-input"
               type="email"
               id="customerEmail"
               name="customerEmail"
@@ -106,6 +108,7 @@ export default function CheckoutPage({ showToast, updateCartCount, navigateTo }:
               Address
             </label>
             <textarea
+              data-testid="checkout-address-input"
               id="customerAddress"
               name="customerAddress"
               value={formData.customerAddress}
@@ -118,6 +121,7 @@ export default function CheckoutPage({ showToast, updateCartCount, navigateTo }:
 
           <div className="flex gap-4">
             <button
+              data-testid="back-to-cart-button"
               type="button"
               onClick={() => navigateTo('cart')}
               className="btn btn-secondary flex-1"
@@ -125,6 +129,7 @@ export default function CheckoutPage({ showToast, updateCartCount, navigateTo }:
               Back to Cart
             </button>
             <button
+              data-testid="place-order-button"
               type="submit"
               disabled={submitting}
               className="btn btn-primary flex-1"

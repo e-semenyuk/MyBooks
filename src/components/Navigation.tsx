@@ -11,10 +11,11 @@ interface NavigationProps {
 export default function Navigation({ currentPage, cartCount, onNavigate }: NavigationProps) {
   const { data: session, status } = useSession()
   return (
-    <nav className="bg-gradient-to-r from-primary-600 via-purple-600 to-primary-700 text-white shadow-2xl sticky top-0 z-50 backdrop-blur-lg">
+    <nav data-testid="main-navigation" className="bg-gradient-to-r from-primary-600 via-purple-600 to-primary-700 text-white shadow-2xl sticky top-0 z-50 backdrop-blur-lg">
       <div className="container mx-auto px-6">
         <div className="flex items-center justify-between py-5">
           <button 
+            data-testid="nav-logo-button"
             onClick={() => onNavigate('home')}
             className="group flex items-center gap-3 hover:scale-105 transition-transform duration-300"
           >
@@ -27,6 +28,7 @@ export default function Navigation({ currentPage, cartCount, onNavigate }: Navig
           
           <div className="flex gap-2">
             <button
+              data-testid="nav-home-button"
               onClick={() => onNavigate('home')}
               className={`px-5 py-2.5 rounded-xl font-semibold transition-all duration-300 ${
                 currentPage === 'home' 
@@ -43,6 +45,7 @@ export default function Navigation({ currentPage, cartCount, onNavigate }: Navig
             </button>
             
             <button
+              data-testid="nav-cart-button"
               onClick={() => onNavigate('cart')}
               className={`px-5 py-2.5 rounded-xl font-semibold transition-all duration-300 relative ${
                 currentPage === 'cart' 
@@ -56,7 +59,7 @@ export default function Navigation({ currentPage, cartCount, onNavigate }: Navig
                 </svg>
                 Cart
                 {cartCount > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-gradient-to-r from-pink-500 to-rose-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center shadow-lg animate-scale-in">
+                  <span data-testid="cart-count-badge" className="absolute -top-1 -right-1 bg-gradient-to-r from-pink-500 to-rose-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center shadow-lg animate-scale-in">
                     {cartCount}
                   </span>
                 )}
@@ -67,6 +70,7 @@ export default function Navigation({ currentPage, cartCount, onNavigate }: Navig
             {/* Admin Button - only show for admins */}
             {session && (session.user as any)?.role === 'ADMIN' && (
               <button
+                data-testid="nav-admin-button"
                 onClick={() => onNavigate('admin')}
                 className={`px-5 py-2.5 rounded-xl font-semibold transition-all duration-300 ${
                   currentPage === 'admin' 
@@ -86,12 +90,13 @@ export default function Navigation({ currentPage, cartCount, onNavigate }: Navig
 
             {/* Profile/Login/Register Buttons */}
             {status === 'loading' ? (
-              <div className="px-5 py-2.5 rounded-xl bg-white/10 backdrop-blur-sm">
+              <div data-testid="nav-loading" className="px-5 py-2.5 rounded-xl bg-white/10 backdrop-blur-sm">
                 <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white"></div>
               </div>
             ) : session ? (
               <>
                 <button
+                  data-testid="nav-profile-button"
                   onClick={() => onNavigate('profile')}
                   className={`px-5 py-2.5 rounded-xl font-semibold transition-all duration-300 ${
                     currentPage === 'profile' 
@@ -107,6 +112,7 @@ export default function Navigation({ currentPage, cartCount, onNavigate }: Navig
                   </span>
                 </button>
                 <button
+                  data-testid="nav-logout-button"
                   onClick={() => signOut()}
                   className="px-5 py-2.5 rounded-xl font-semibold transition-all duration-300 hover:bg-white/15 backdrop-blur-sm"
                 >
@@ -120,6 +126,7 @@ export default function Navigation({ currentPage, cartCount, onNavigate }: Navig
               </>
             ) : (
               <button
+                data-testid="nav-login-button"
                 onClick={() => onNavigate('login')}
                 className="px-5 py-2.5 rounded-xl font-semibold transition-all duration-300 bg-white text-primary-600 hover:bg-white/90 shadow-lg"
               >

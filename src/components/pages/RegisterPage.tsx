@@ -53,7 +53,7 @@ export default function RegisterPage({ showToast, onRegisterSuccess, onSwitchToL
   }
 
   return (
-    <div className="min-h-[calc(100vh-200px)] flex items-center justify-center py-12 px-4">
+    <div data-testid="register-page" className="min-h-[calc(100vh-200px)] flex items-center justify-center py-12 px-4">
       <div className="max-w-md w-full">
         <div className="card-gradient border-2 border-primary-200 animate-fade-in">
           <div className="text-center mb-8">
@@ -62,12 +62,13 @@ export default function RegisterPage({ showToast, onRegisterSuccess, onSwitchToL
             <p className="text-gray-600">Join our bookstore community</p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form data-testid="register-form" onSubmit={handleSubmit} className="space-y-5">
             <div>
               <label htmlFor="name" className="block text-sm font-semibold text-gray-700 mb-2">
                 Full Name
               </label>
               <input
+                data-testid="register-name-input"
                 id="name"
                 type="text"
                 value={name}
@@ -83,6 +84,7 @@ export default function RegisterPage({ showToast, onRegisterSuccess, onSwitchToL
                 Email Address
               </label>
               <input
+                data-testid="register-email-input"
                 id="email"
                 type="email"
                 value={email}
@@ -98,6 +100,7 @@ export default function RegisterPage({ showToast, onRegisterSuccess, onSwitchToL
                 Password
               </label>
               <input
+                data-testid="register-password-input"
                 id="password"
                 type="password"
                 value={password}
@@ -114,6 +117,7 @@ export default function RegisterPage({ showToast, onRegisterSuccess, onSwitchToL
                 Confirm Password
               </label>
               <input
+                data-testid="register-confirm-password-input"
                 id="confirmPassword"
                 type="password"
                 value={confirmPassword}
@@ -126,6 +130,7 @@ export default function RegisterPage({ showToast, onRegisterSuccess, onSwitchToL
             </div>
 
             <button
+              data-testid="register-submit-button"
               type="submit"
               disabled={loading}
               className="btn btn-primary w-full"
@@ -150,6 +155,7 @@ export default function RegisterPage({ showToast, onRegisterSuccess, onSwitchToL
             <p className="text-sm text-gray-600">
               Already have an account?{' '}
               <button
+                data-testid="switch-to-login-button"
                 onClick={onSwitchToLogin}
                 className="font-semibold text-primary-600 hover:text-primary-700 transition-colors"
               >

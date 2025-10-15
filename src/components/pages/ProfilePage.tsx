@@ -69,9 +69,9 @@ export default function ProfilePage({ showToast }: ProfilePageProps) {
   }
 
   return (
-    <div className="animate-fade-in">
+    <div data-testid="profile-page" className="animate-fade-in">
       {/* Profile Header */}
-      <div className="card-gradient mb-8 bg-gradient-to-r from-primary-50 to-purple-50 border-2 border-primary-200">
+      <div data-testid="profile-header" className="card-gradient mb-8 bg-gradient-to-r from-primary-50 to-purple-50 border-2 border-primary-200">
         <div className="flex items-center gap-6">
           <div className="w-24 h-24 rounded-full bg-gradient-to-r from-primary-500 to-purple-600 flex items-center justify-center text-white text-4xl font-bold shadow-xl">
             {session.user?.name?.charAt(0).toUpperCase()}
@@ -96,7 +96,7 @@ export default function ProfilePage({ showToast }: ProfilePageProps) {
       </div>
 
       {/* Order History */}
-      <div className="card-gradient">
+      <div data-testid="order-history-section" className="card-gradient">
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
             <svg className="w-7 h-7 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -110,12 +110,12 @@ export default function ProfilePage({ showToast }: ProfilePageProps) {
         </div>
 
         {loading ? (
-          <div className="text-center py-12">
+          <div data-testid="profile-orders-loading" className="text-center py-12">
             <div className="inline-block animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-primary-600 mb-4"></div>
             <p className="text-gray-600">Loading your orders...</p>
           </div>
         ) : orders.length === 0 ? (
-          <div className="text-center py-16 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl border-2 border-dashed border-gray-300">
+          <div data-testid="profile-no-orders" className="text-center py-16 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl border-2 border-dashed border-gray-300">
             <div className="text-7xl mb-4">📦</div>
             <h3 className="text-2xl font-bold text-gray-800 mb-2">No orders yet</h3>
             <p className="text-gray-600 mb-6">Start shopping to see your order history here!</p>
@@ -124,10 +124,11 @@ export default function ProfilePage({ showToast }: ProfilePageProps) {
             </div>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div data-testid="profile-orders-list" className="space-y-4">
             {orders.map((order) => (
               <div
                 key={order.id}
+                data-testid={`profile-order-item-${order.id}`}
                 className="border-2 border-gray-200 rounded-2xl p-6 hover:border-primary-300 transition-all bg-gradient-to-r from-white to-gray-50"
               >
                 {/* Order Header */}

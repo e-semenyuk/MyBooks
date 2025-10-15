@@ -39,7 +39,7 @@ export default function LoginPage({ showToast, onLoginSuccess, onSwitchToRegiste
   }
 
   return (
-    <div className="min-h-[calc(100vh-200px)] flex items-center justify-center py-12 px-4">
+    <div data-testid="login-page" className="min-h-[calc(100vh-200px)] flex items-center justify-center py-12 px-4">
       <div className="max-w-md w-full">
         <div className="card-gradient border-2 border-primary-200 animate-fade-in">
           <div className="text-center mb-8">
@@ -48,12 +48,13 @@ export default function LoginPage({ showToast, onLoginSuccess, onSwitchToRegiste
             <p className="text-gray-600">Sign in to your account</p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form data-testid="login-form" onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-2">
                 Email Address
               </label>
               <input
+                data-testid="login-email-input"
                 id="email"
                 type="email"
                 value={email}
@@ -69,6 +70,7 @@ export default function LoginPage({ showToast, onLoginSuccess, onSwitchToRegiste
                 Password
               </label>
               <input
+                data-testid="login-password-input"
                 id="password"
                 type="password"
                 value={password}
@@ -80,6 +82,7 @@ export default function LoginPage({ showToast, onLoginSuccess, onSwitchToRegiste
             </div>
 
             <button
+              data-testid="login-submit-button"
               type="submit"
               disabled={loading}
               className="btn btn-primary w-full"
@@ -104,6 +107,7 @@ export default function LoginPage({ showToast, onLoginSuccess, onSwitchToRegiste
             <p className="text-sm text-gray-600">
               Don't have an account?{' '}
               <button
+                data-testid="switch-to-register-button"
                 onClick={onSwitchToRegister}
                 className="font-semibold text-primary-600 hover:text-primary-700 transition-colors"
               >

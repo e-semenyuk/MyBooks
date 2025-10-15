@@ -173,7 +173,7 @@ export default function AdminPage({ showToast }: AdminPageProps) {
   }
 
   return (
-    <div className="animate-fade-in">
+    <div data-testid="admin-page" className="animate-fade-in">
       {/* Header */}
       <div className="mb-8">
         <h2 className="text-4xl font-bold text-gray-900 mb-2 flex items-center gap-3">
@@ -189,6 +189,7 @@ export default function AdminPage({ showToast }: AdminPageProps) {
       {/* Tabs */}
       <div className="flex gap-4 mb-8">
         <button
+          data-testid="admin-books-tab"
           onClick={() => setActiveTab('books')}
           className={`px-6 py-3 rounded-xl font-semibold transition-all duration-300 ${
             activeTab === 'books'
@@ -204,6 +205,7 @@ export default function AdminPage({ showToast }: AdminPageProps) {
           </span>
         </button>
         <button
+          data-testid="admin-orders-tab"
           onClick={() => setActiveTab('orders')}
           className={`px-6 py-3 rounded-xl font-semibold transition-all duration-300 ${
             activeTab === 'orders'
@@ -230,10 +232,11 @@ export default function AdminPage({ showToast }: AdminPageProps) {
                 {editingBook ? 'Edit Book' : 'Add New Book'}
               </h3>
               
-              <form onSubmit={handleBookSubmit} className="space-y-4">
+              <form data-testid="admin-book-form" onSubmit={handleBookSubmit} className="space-y-4">
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">Title *</label>
                   <input
+                    data-testid="admin-book-title-input"
                     type="text"
                     value={bookForm.title}
                     onChange={(e) => setBookForm({ ...bookForm, title: e.target.value })}
@@ -245,6 +248,7 @@ export default function AdminPage({ showToast }: AdminPageProps) {
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">Author *</label>
                   <input
+                    data-testid="admin-book-author-input"
                     type="text"
                     value={bookForm.author}
                     onChange={(e) => setBookForm({ ...bookForm, author: e.target.value })}
@@ -256,6 +260,7 @@ export default function AdminPage({ showToast }: AdminPageProps) {
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">ISBN</label>
                   <input
+                    data-testid="admin-book-isbn-input"
                     type="text"
                     value={bookForm.isbn}
                     onChange={(e) => setBookForm({ ...bookForm, isbn: e.target.value })}
@@ -267,6 +272,7 @@ export default function AdminPage({ showToast }: AdminPageProps) {
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">Price *</label>
                     <input
+                      data-testid="admin-book-price-input"
                       type="number"
                       step="0.01"
                       value={bookForm.price}
@@ -279,6 +285,7 @@ export default function AdminPage({ showToast }: AdminPageProps) {
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">Stock *</label>
                     <input
+                      data-testid="admin-book-stock-input"
                       type="number"
                       value={bookForm.stockQuantity}
                       onChange={(e) => setBookForm({ ...bookForm, stockQuantity: e.target.value })}
@@ -291,6 +298,7 @@ export default function AdminPage({ showToast }: AdminPageProps) {
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">Description</label>
                   <textarea
+                    data-testid="admin-book-description-input"
                     value={bookForm.description}
                     onChange={(e) => setBookForm({ ...bookForm, description: e.target.value })}
                     rows={3}
@@ -299,11 +307,12 @@ export default function AdminPage({ showToast }: AdminPageProps) {
                 </div>
 
                 <div className="flex gap-2">
-                  <button type="submit" className="btn btn-primary flex-1">
+                  <button data-testid="admin-save-book-button" type="submit" className="btn btn-primary flex-1">
                     {editingBook ? 'Update Book' : 'Add Book'}
                   </button>
                   {editingBook && (
                     <button
+                      data-testid="admin-cancel-edit-button"
                       type="button"
                       onClick={() => {
                         setEditingBook(null)
@@ -320,7 +329,7 @@ export default function AdminPage({ showToast }: AdminPageProps) {
           </div>
 
           {/* Books List */}
-          <div className="lg:col-span-2">
+          <div data-testid="admin-books-list" className="lg:col-span-2">
             {loading ? (
               <div className="text-center py-20">
                 <div className="inline-block animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-primary-600 mb-4"></div>
@@ -329,7 +338,7 @@ export default function AdminPage({ showToast }: AdminPageProps) {
             ) : (
               <div className="space-y-4">
                 {books.map((book) => (
-                  <div key={book.id} className="card-gradient border-2 border-gray-200 hover:border-primary-200 transition-all">
+                  <div key={book.id} data-testid={`admin-book-item-${book.id}`} className="card-gradient border-2 border-gray-200 hover:border-primary-200 transition-all">
                     <div className="flex justify-between items-start">
                       <div className="flex-1">
                         <h4 className="text-xl font-bold text-gray-900">{book.title}</h4>
@@ -347,6 +356,7 @@ export default function AdminPage({ showToast }: AdminPageProps) {
                       </div>
                       <div className="flex gap-2">
                         <button
+                          data-testid={`admin-edit-book-${book.id}`}
                           onClick={() => handleEditBook(book)}
                           className="p-2 text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
                         >
@@ -355,6 +365,7 @@ export default function AdminPage({ showToast }: AdminPageProps) {
                           </svg>
                         </button>
                         <button
+                          data-testid={`admin-delete-book-${book.id}`}
                           onClick={() => handleDeleteBook(book.id)}
                           className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                         >
@@ -374,22 +385,22 @@ export default function AdminPage({ showToast }: AdminPageProps) {
 
       {/* Orders Tab */}
       {activeTab === 'orders' && (
-        <div>
+        <div data-testid="admin-orders-section">
           {loading ? (
-            <div className="text-center py-20">
+            <div data-testid="admin-orders-loading" className="text-center py-20">
               <div className="inline-block animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-primary-600 mb-4"></div>
               <p className="text-gray-600">Loading orders...</p>
             </div>
           ) : orders.length === 0 ? (
-            <div className="text-center py-20 card-gradient">
+            <div data-testid="admin-no-orders" className="text-center py-20 card-gradient">
               <div className="text-6xl mb-4">📦</div>
               <h3 className="text-2xl font-bold text-gray-800 mb-2">No orders yet</h3>
               <p className="text-gray-600">Orders will appear here once customers start purchasing.</p>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div data-testid="admin-orders-list" className="space-y-4">
               {orders.map((order) => (
-                <div key={order.id} className="card-gradient border-2 border-gray-200">
+                <div key={order.id} data-testid={`admin-order-item-${order.id}`} className="card-gradient border-2 border-gray-200">
                   <div className="flex flex-wrap justify-between items-start gap-4 mb-4">
                     <div>
                       <h4 className="text-xl font-bold text-gray-900">Order #{order.id}</h4>
@@ -399,6 +410,7 @@ export default function AdminPage({ showToast }: AdminPageProps) {
                     <div className="text-right">
                       <p className="text-3xl font-bold text-gradient">${order.totalAmount.toFixed(2)}</p>
                       <select
+                        data-testid={`admin-order-status-${order.id}`}
                         value={order.status}
                         onChange={(e) => handleUpdateOrderStatus(order.id, e.target.value)}
                         className="mt-2 px-3 py-1 rounded-lg border-2 border-gray-200 text-sm font-semibold"

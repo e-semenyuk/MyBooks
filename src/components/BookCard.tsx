@@ -10,9 +10,9 @@ export default function BookCard({ book, onAddToCart }: BookCardProps) {
   const isLowStock = book.stockQuantity > 0 && book.stockQuantity <= 5
   
   return (
-    <div className="group card-gradient hover-lift border-2 border-transparent hover:border-primary-200 overflow-hidden relative animate-fade-in flex flex-col h-full">
+    <div data-testid={`book-card-${book.id}`} className="group card-gradient hover-lift border-2 border-transparent hover:border-primary-200 overflow-hidden relative animate-fade-in flex flex-col h-full">
       {/* Stock badge */}
-      <div className="absolute top-4 right-4 z-10">
+      <div data-testid={`book-stock-badge-${book.id}`} className="absolute top-4 right-4 z-10">
         {isOutOfStock ? (
           <span className="badge badge-danger shadow-lg">Out of Stock</span>
         ) : isLowStock ? (
@@ -28,10 +28,10 @@ export default function BookCard({ book, onAddToCart }: BookCardProps) {
       </div>
       
       <div className="relative flex-1 flex flex-col">
-        <h3 className="text-xl font-bold text-gray-900 mb-2 line-clamp-2 group-hover:text-primary-600 transition-colors duration-300">
+        <h3 data-testid={`book-title-${book.id}`} className="text-xl font-bold text-gray-900 mb-2 line-clamp-2 group-hover:text-primary-600 transition-colors duration-300">
           {book.title}
         </h3>
-        <p className="text-gray-600 mb-3 flex items-center gap-2">
+        <p data-testid={`book-author-${book.id}`} className="text-gray-600 mb-3 flex items-center gap-2">
           <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
           </svg>
@@ -52,13 +52,13 @@ export default function BookCard({ book, onAddToCart }: BookCardProps) {
         <div className="flex items-center justify-between mb-4 pt-4 border-t border-gray-200">
           <div>
             <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Price</p>
-            <p className="text-3xl font-bold text-gradient">
+            <p data-testid={`book-price-${book.id}`} className="text-3xl font-bold text-gradient">
               ${book.price.toFixed(2)}
             </p>
           </div>
           <div className="text-right">
             <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Stock</p>
-            <p className={`text-lg font-bold ${
+            <p data-testid={`book-stock-${book.id}`} className={`text-lg font-bold ${
               isOutOfStock ? 'text-red-500' : 
               isLowStock ? 'text-amber-600' : 
               'text-emerald-600'
@@ -69,6 +69,7 @@ export default function BookCard({ book, onAddToCart }: BookCardProps) {
         </div>
         
         <button
+          data-testid={`add-to-cart-button-${book.id}`}
           onClick={() => onAddToCart(book.id)}
           disabled={isOutOfStock}
           className={`btn w-full ${

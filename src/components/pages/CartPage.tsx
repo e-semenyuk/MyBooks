@@ -102,7 +102,7 @@ export default function CartPage({ showToast, updateCartCount, navigateTo }: Car
 
   if (loading) {
     return (
-      <div className="text-center py-20">
+      <div data-testid="cart-loading" className="text-center py-20">
         <div className="inline-block animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-primary-600 mb-4"></div>
         <p className="text-gray-600 text-lg font-medium">Loading your cart...</p>
       </div>
@@ -110,7 +110,7 @@ export default function CartPage({ showToast, updateCartCount, navigateTo }: Car
   }
 
   return (
-    <div className="animate-fade-in">
+    <div data-testid="cart-page" className="animate-fade-in">
       {/* Header */}
       <div className="mb-8">
         <h2 className="text-4xl font-bold text-gray-900 mb-2 flex items-center gap-3">
@@ -128,13 +128,13 @@ export default function CartPage({ showToast, updateCartCount, navigateTo }: Car
       </div>
 
       {cartItems.length === 0 ? (
-        <div className="card-gradient text-center py-20 max-w-lg mx-auto">
+        <div data-testid="empty-cart-message" className="card-gradient text-center py-20 max-w-lg mx-auto">
           <div className="text-8xl mb-6 animate-bounce">🛒</div>
           <h3 className="text-3xl font-bold text-gray-800 mb-3">Your cart is empty</h3>
           <p className="text-gray-600 mb-8 text-lg">
             Discover amazing books and start your reading journey!
           </p>
-          <button onClick={() => navigateTo('home')} className="btn btn-primary text-lg">
+          <button data-testid="browse-books-button" onClick={() => navigateTo('home')} className="btn btn-primary text-lg">
             <span className="flex items-center gap-2">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
@@ -146,10 +146,11 @@ export default function CartPage({ showToast, updateCartCount, navigateTo }: Car
       ) : (
         <div className="grid lg:grid-cols-3 gap-8">
           {/* Cart Items */}
-          <div className="lg:col-span-2 space-y-4">
+          <div data-testid="cart-items-list" className="lg:col-span-2 space-y-4">
             {cartItems.map((item, index) => (
               <div 
-                key={item.id} 
+                key={item.id}
+                data-testid={`cart-item-${item.id}`}
                 className="card-gradient border-2 border-transparent hover:border-primary-200 transition-all duration-300 animate-slide-up"
                 style={{ animationDelay: `${index * 50}ms` }}
               >
@@ -184,6 +185,7 @@ export default function CartPage({ showToast, updateCartCount, navigateTo }: Car
                       <div className="flex items-center gap-2">
                         <label className="text-sm font-semibold text-gray-700">Quantity:</label>
                         <input
+                          data-testid={`cart-item-quantity-${item.id}`}
                           type="number"
                           value={item.quantity}
                           onChange={(e) => handleUpdateQuantity(item.id, parseInt(e.target.value))}
@@ -192,10 +194,11 @@ export default function CartPage({ showToast, updateCartCount, navigateTo }: Car
                           className="w-20 px-3 py-2 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-primary-200 focus:border-primary-400 font-semibold text-center"
                         />
                       </div>
-                      <div className="text-lg font-bold text-gray-700">
+                      <div data-testid={`cart-item-subtotal-${item.id}`} className="text-lg font-bold text-gray-700">
                         Subtotal: <span className="text-primary-600">${(item.book.price * item.quantity).toFixed(2)}</span>
                       </div>
                       <button
+                        data-testid={`remove-cart-item-${item.id}`}
                         onClick={() => handleRemoveItem(item.id)}
                         className="ml-auto btn btn-danger text-sm"
                       >
@@ -215,7 +218,7 @@ export default function CartPage({ showToast, updateCartCount, navigateTo }: Car
 
           {/* Order Summary */}
           <div className="lg:col-span-1">
-            <div className="card-gradient sticky top-24 border-2 border-primary-200">
+            <div data-testid="order-summary" className="card-gradient sticky top-24 border-2 border-primary-200">
               <h3 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
                 <svg className="w-6 h-6 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
@@ -237,12 +240,13 @@ export default function CartPage({ showToast, updateCartCount, navigateTo }: Car
                 <div className="pt-4 border-t-2 border-gray-300">
                   <div className="flex justify-between items-center mb-2">
                     <span className="text-xl font-bold text-gray-900">Total</span>
-                    <span className="text-4xl font-bold text-gradient">${total.toFixed(2)}</span>
+                    <span data-testid="cart-total" className="text-4xl font-bold text-gradient">${total.toFixed(2)}</span>
                   </div>
                 </div>
               </div>
               
               <button 
+                data-testid="proceed-to-checkout-button"
                 onClick={handleCheckout} 
                 className="btn btn-primary w-full text-lg"
               >
@@ -255,6 +259,7 @@ export default function CartPage({ showToast, updateCartCount, navigateTo }: Car
               </button>
               
               <button 
+                data-testid="continue-shopping-button"
                 onClick={() => navigateTo('home')} 
                 className="btn btn-outline w-full mt-3"
               >

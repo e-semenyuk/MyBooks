@@ -63,9 +63,9 @@ export default function HomePage({ showToast, updateCartCount }: HomePageProps) 
   }
 
   return (
-    <div className="animate-fade-in">
+    <div data-testid="home-page" className="animate-fade-in">
       {/* Hero Search Section */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary-600 via-purple-600 to-indigo-700 text-white shadow-2xl mb-10 p-10">
+      <div data-testid="search-section" className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary-600 via-purple-600 to-indigo-700 text-white shadow-2xl mb-10 p-10">
         {/* Decorative background elements */}
         <div className="absolute top-0 right-0 text-9xl opacity-10 -mr-8 -mt-8">📚</div>
         <div className="absolute bottom-0 left-0 text-7xl opacity-10 -ml-6 -mb-6">✨</div>
@@ -78,12 +78,13 @@ export default function HomePage({ showToast, updateCartCount }: HomePageProps) 
             Explore our curated collection of timeless classics and bestsellers
           </p>
           
-          <form onSubmit={handleSearch} className="flex gap-3">
+          <form data-testid="search-form" onSubmit={handleSearch} className="flex gap-3">
             <div className="flex-1 relative">
               <svg className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
               <input
+                data-testid="search-input"
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -92,6 +93,7 @@ export default function HomePage({ showToast, updateCartCount }: HomePageProps) 
               />
             </div>
             <button 
+              data-testid="search-submit-button"
               type="submit" 
               className="px-8 py-4 bg-white text-primary-600 font-bold rounded-2xl hover:bg-white/90 transition-all duration-300 shadow-xl hover:shadow-2xl hover:scale-105 active:scale-95"
             >
@@ -108,16 +110,17 @@ export default function HomePage({ showToast, updateCartCount }: HomePageProps) 
 
       {/* Books Grid */}
       {loading ? (
-        <div className="text-center py-20">
+        <div data-testid="books-loading" className="text-center py-20">
           <div className="inline-block animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-primary-600 mb-4"></div>
           <p className="text-gray-600 text-lg font-medium">Loading amazing books...</p>
         </div>
       ) : books.length === 0 ? (
-        <div className="text-center py-20 card-gradient max-w-md mx-auto">
+        <div data-testid="no-books-message" className="text-center py-20 card-gradient max-w-md mx-auto">
           <div className="text-6xl mb-4">📚</div>
           <h3 className="text-2xl font-bold text-gray-800 mb-3">No books found</h3>
           <p className="text-gray-600 mb-6">Try adjusting your search or browse all books</p>
           <button 
+            data-testid="view-all-books-button"
             onClick={() => {
               setSearchQuery('')
               loadBooks('')
@@ -135,11 +138,12 @@ export default function HomePage({ showToast, updateCartCount }: HomePageProps) 
       ) : (
         <>
           <div className="flex items-center justify-between mb-6">
-            <h3 className="text-2xl font-bold text-gray-800">
+            <h3 data-testid="books-count" className="text-2xl font-bold text-gray-800">
               {searchQuery ? `Search Results (${books.length})` : `All Books (${books.length})`}
             </h3>
             {searchQuery && (
               <button
+                data-testid="clear-search-button"
                 onClick={() => {
                   setSearchQuery('')
                   loadBooks('')
@@ -153,7 +157,7 @@ export default function HomePage({ showToast, updateCartCount }: HomePageProps) 
               </button>
             )}
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div data-testid="books-grid" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {books.map((book) => (
               <BookCard 
                 key={book.id} 
