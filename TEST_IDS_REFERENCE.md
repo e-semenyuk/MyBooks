@@ -104,6 +104,7 @@ This document provides a comprehensive list of all `data-testid` attributes used
 | Test ID | Element | Description |
 |---------|---------|-------------|
 | `admin-page` | `<div>` | Admin page container |
+| `admin-access-denied` | `<div>` | Shown to signed-in users who are not admins |
 | `admin-books-tab` | `<button>` | Books tab button |
 | `admin-orders-tab` | `<button>` | Orders tab button |
 | `admin-book-form` | `<form>` | Book add/edit form |
@@ -131,6 +132,7 @@ This document provides a comprehensive list of all `data-testid` attributes used
 | Test ID | Element | Description |
 |---------|---------|-------------|
 | `profile-page` | `<div>` | Profile page container |
+| `profile-login-required` | `<div>` | Shown instead of the profile when nobody is signed in |
 | `profile-header` | `<div>` | Profile header section |
 | `order-history-section` | `<div>` | Order history section |
 | `profile-orders-loading` | `<div>` | Orders loading state |

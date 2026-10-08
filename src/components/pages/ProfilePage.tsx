@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useSession } from 'next-auth/react'
+import { ArrowRightIcon, LockIcon, PackageIcon } from '@/components/icons'
 
 interface ProfilePageProps {
   showToast: (message: string, type: 'success' | 'error') => void
@@ -44,10 +45,10 @@ export default function ProfilePage({ showToast }: ProfilePageProps) {
 
   if (!session) {
     return (
-      <div className="text-center py-20">
-        <div className="text-6xl mb-4">🔒</div>
-        <h2 className="text-3xl font-bold text-gray-900 mb-2">Please Login</h2>
-        <p className="text-gray-600">You need to be logged in to view your profile.</p>
+      <div data-testid="profile-login-required" className="empty-state">
+        <LockIcon className="mx-auto mb-4 h-8 w-8 text-stone-500" />
+        <h2 className="panel-title mb-2">Please Login</h2>
+        <p className="text-sm text-stone-600">You need to be logged in to view your profile.</p>
       </div>
     )
   }
@@ -56,10 +57,6 @@ export default function ProfilePage({ showToast }: ProfilePageProps) {
     switch (status.toUpperCase()) {
       case 'PENDING':
         return 'badge-warning'
-      case 'CONFIRMED':
-        return 'badge-primary'
-      case 'SHIPPED':
-        return 'badge-primary'
       case 'DELIVERED':
         return 'badge-success'
       case 'CANCELLED':
@@ -69,60 +66,50 @@ export default function ProfilePage({ showToast }: ProfilePageProps) {
     }
   }
 
+  const initial = session.user?.name?.charAt(0).toUpperCase() ?? '?'
+
   return (
     <div data-testid="profile-page" className="animate-fade-in">
-      {/* Profile Header */}
-      <div data-testid="profile-header" className="card-gradient mb-8 bg-gradient-to-r from-primary-50 to-purple-50 border-2 border-primary-200">
-        <div className="flex items-center gap-6">
-          <div className="w-24 h-24 rounded-full bg-gradient-to-r from-primary-500 to-purple-600 flex items-center justify-center text-white text-4xl font-bold shadow-xl">
-            {session.user?.name?.charAt(0).toUpperCase()}
-          </div>
-          <div className="flex-1">
-            <h2 className="text-3xl font-bold text-gray-900 mb-2">
-              Welcome, {session.user?.name}!
-            </h2>
-            <p className="text-gray-600 flex items-center gap-2">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-              </svg>
-              {session.user?.email}
-            </p>
-            <div className="mt-3">
-              <span className={`badge ${(session.user as any)?.role === 'ADMIN' ? 'bg-gradient-to-r from-amber-500 to-orange-600 text-white' : 'badge-primary'}`}>
-                {(session.user as any)?.role}
-              </span>
-            </div>
-          </div>
+      <div data-testid="profile-header" className="mb-10 flex items-center gap-6 border-b border-stone-200 pb-8">
+        <div
+          aria-hidden="true"
+          className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-ink-900 font-serif text-3xl font-semibold text-white"
+        >
+          {initial}
+        </div>
+        <div className="min-w-0">
+          <p className="section-label mb-2">Account</p>
+          <h2 className="page-title mb-1 truncate">Welcome, {session.user?.name}</h2>
+          <p className="flex flex-wrap items-center gap-3 text-sm text-stone-600">
+            <span className="truncate">{session.user?.email}</span>
+            <span className={`badge ${(session.user as any)?.role === 'ADMIN' ? 'bg-brass-100 text-brass-700' : 'badge-primary'}`}>
+              {(session.user as any)?.role}
+            </span>
+          </p>
         </div>
       </div>
 
-      {/* Order History */}
-      <div data-testid="order-history-section" className="card-gradient">
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <svg className="w-7 h-7 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-            </svg>
-            Order History
-          </h3>
-          <span className="text-sm font-semibold text-gray-600">
+      <div data-testid="order-history-section">
+        <div className="mb-6 flex items-baseline justify-between">
+          <h3 className="font-serif text-2xl font-semibold tracking-tight text-ink-900">Order History</h3>
+          <span className="num text-sm text-stone-600">
             {orders.length} {orders.length === 1 ? 'Order' : 'Orders'}
           </span>
         </div>
 
         {loading ? (
-          <div data-testid="profile-orders-loading" className="text-center py-12">
-            <div className="inline-block animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-primary-600 mb-4"></div>
-            <p className="text-gray-600">Loading your orders...</p>
+          <div data-testid="profile-orders-loading" aria-busy="true" className="space-y-4">
+            <div className="skeleton h-40 w-full" />
+            <div className="skeleton h-40 w-full" />
           </div>
         ) : orders.length === 0 ? (
-          <div data-testid="profile-no-orders" className="text-center py-16 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl border-2 border-dashed border-gray-300">
-            <div className="text-7xl mb-4">📦</div>
-            <h3 className="text-2xl font-bold text-gray-800 mb-2">No orders yet</h3>
-            <p className="text-gray-600 mb-6">Start shopping to see your order history here!</p>
-            <div className="inline-block px-6 py-2 bg-gradient-to-r from-primary-500 to-primary-600 text-white rounded-xl font-semibold">
+          <div data-testid="profile-no-orders" className="empty-state">
+            <PackageIcon className="mx-auto mb-4 h-8 w-8 text-stone-500" />
+            <h3 className="panel-title mb-2">No orders yet</h3>
+            <p className="mb-6 text-sm text-stone-600">Your orders will appear here after your first purchase.</p>
+            <Link href="/" className="btn btn-primary">
               Browse Books
-            </div>
+            </Link>
           </div>
         ) : (
           <div data-testid="profile-orders-list" className="space-y-4">
@@ -130,21 +117,15 @@ export default function ProfilePage({ showToast }: ProfilePageProps) {
               <div
                 key={order.id}
                 data-testid={`profile-order-item-${order.id}`}
-                className="border-2 border-gray-200 rounded-2xl p-6 hover:border-primary-300 transition-all bg-gradient-to-r from-white to-gray-50"
+                className="rounded-lg border border-stone-200 bg-white"
               >
-                {/* Order Header */}
-                <div className="flex flex-wrap justify-between items-start gap-4 mb-4 pb-4 border-b-2 border-gray-200">
+                <div className="flex flex-wrap items-start justify-between gap-4 border-b border-stone-200 p-5">
                   <div>
-                    <div className="flex items-center gap-3 mb-2">
-                      <h4 className="text-xl font-bold text-gray-900">Order #{order.id}</h4>
-                      <span className={`badge ${getStatusColor(order.status)}`}>
-                        {order.status}
-                      </span>
+                    <div className="mb-1 flex items-center gap-3">
+                      <h4 className="font-serif text-lg font-semibold text-ink-900">Order #{order.id}</h4>
+                      <span className={`badge ${getStatusColor(order.status)}`}>{order.status}</span>
                     </div>
-                    <p className="text-sm text-gray-600 flex items-center gap-2">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                      </svg>
+                    <p className="text-sm text-stone-600">
                       {new Date(order.orderDate).toLocaleDateString('en-US', {
                         year: 'numeric',
                         month: 'long',
@@ -153,46 +134,41 @@ export default function ProfilePage({ showToast }: ProfilePageProps) {
                     </p>
                   </div>
                   <div className="text-right">
-                    <p className="text-sm text-gray-600 uppercase tracking-wide mb-1">Total</p>
-                    <p className="text-3xl font-bold text-gradient">${order.totalAmount.toFixed(2)}</p>
+                    <p className="section-label mb-1">Total</p>
+                    <p className="num font-serif text-2xl font-semibold text-ink-900">
+                      ${order.totalAmount.toFixed(2)}
+                    </p>
                   </div>
-                  <Link
-                    data-testid={`profile-order-view-${order.id}`}
-                    href={`/orders/${order.id}`}
-                    className="text-sm font-semibold text-primary-600 hover:underline"
-                  >
-                    View details
-                  </Link>
                 </div>
 
-                {/* Order Items */}
-                <div>
-                  <p className="font-semibold text-gray-700 mb-3 flex items-center gap-2">
-                    <svg className="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                    Items ({order.orderItems?.length || 0})
-                  </p>
-                  <div className="space-y-2 bg-white rounded-xl p-4 border border-gray-100">
+                <div className="p-5">
+                  <p className="section-label mb-3">Items ({order.orderItems?.length || 0})</p>
+                  <div className="space-y-3">
                     {order.orderItems?.map((item: any, idx: number) => (
-                      <div
-                        key={idx}
-                        className="flex justify-between items-center py-2 border-b last:border-b-0 border-gray-100"
-                      >
-                        <div className="flex-1">
-                          <p className="font-semibold text-gray-900">{item.book?.title || 'Unknown'}</p>
-                          <p className="text-sm text-gray-600">by {item.book?.author || 'Unknown'}</p>
-                          <p className="text-xs text-gray-500 mt-1">
-                            ${item.price.toFixed(2)} × {item.quantity}
+                      <div key={idx} className="flex items-start justify-between gap-4">
+                        <div className="min-w-0">
+                          <p className="font-medium text-ink-900">{item.book?.title || 'Unknown'}</p>
+                          <p className="text-sm text-stone-600">{item.book?.author || 'Unknown'}</p>
+                          <p className="num text-xs text-stone-500">
+                            ${item.price.toFixed(2)} x {item.quantity}
                           </p>
                         </div>
-                        <div className="text-right">
-                          <p className="text-lg font-bold text-primary-600">
-                            ${(item.price * item.quantity).toFixed(2)}
-                          </p>
-                        </div>
+                        <p className="num shrink-0 font-medium text-ink-900">
+                          ${(Math.round(item.price * 100) * item.quantity / 100).toFixed(2)}
+                        </p>
                       </div>
                     ))}
+                  </div>
+
+                  <div className="mt-5 border-t border-stone-200 pt-4">
+                    <Link
+                      data-testid={`profile-order-view-${order.id}`}
+                      href={`/orders/${order.id}`}
+                      className="inline-flex items-center gap-1.5 text-sm font-medium text-brass-700 transition-colors hover:text-ink-900"
+                    >
+                      View details
+                      <ArrowRightIcon className="h-4 w-4" />
+                    </Link>
                   </div>
                 </div>
               </div>
@@ -203,4 +179,3 @@ export default function ProfilePage({ showToast }: ProfilePageProps) {
     </div>
   )
 }
-

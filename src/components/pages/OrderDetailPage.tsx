@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { ArrowLeftIcon, SearchOffIcon } from '@/components/icons'
 import { OrderWithItems } from '@/types'
 
 interface OrderDetailPageProps {
@@ -39,110 +40,134 @@ export default function OrderDetailPage({ orderId, showToast }: OrderDetailPageP
 
   if (loading) {
     return (
-      <div data-testid="order-detail-loading" className="text-center py-20 text-gray-600">
-        Loading order...
+      <div data-testid="order-detail-loading" aria-busy="true" className="space-y-4">
+        <div className="skeleton h-10 w-64" />
+        <div className="skeleton h-64 w-full" />
       </div>
     )
   }
 
   if (notFound || !order) {
     return (
-      <div data-testid="order-detail-not-found" className="text-center py-20">
-        <div className="text-6xl mb-4">🔍</div>
-        <h2 className="text-3xl font-bold text-gray-900 mb-2">Order not found</h2>
-        <p className="text-gray-600 mb-6">This order does not exist or belongs to another account.</p>
-        <Link
-          data-testid="order-detail-back-button"
-          href="/profile"
-          className="btn btn-primary"
-        >
+      <div data-testid="order-detail-not-found" className="empty-state">
+        <SearchOffIcon className="mx-auto mb-4 h-8 w-8 text-stone-500" />
+        <h2 className="panel-title mb-2">Order not found</h2>
+        <p className="mb-6 text-sm text-stone-600">
+          This order does not exist or belongs to another account.
+        </p>
+        <Link data-testid="order-detail-back-button" href="/profile" className="btn btn-primary">
           Back to profile
         </Link>
       </div>
     )
   }
 
+  const badge =
+    order.status === 'DELIVERED' ? 'badge-success'
+    : order.status === 'CANCELLED' ? 'badge-danger'
+    : order.status === 'PENDING' ? 'badge-warning'
+    : 'badge-primary'
+
   return (
-    <div data-testid="order-detail-page" className="max-w-3xl mx-auto animate-fade-in">
+    <div data-testid="order-detail-page" className="animate-fade-in">
       <Link
         data-testid="order-detail-back-button"
         href="/profile"
-        className="text-primary-600 font-semibold hover:underline"
+        className="mb-8 inline-flex items-center gap-2 text-sm font-medium text-brass-700 transition-colors hover:text-ink-900"
       >
-        ← Back to profile
+        <ArrowLeftIcon className="h-4 w-4" />
+        Back to profile
       </Link>
 
-      <div className="card mt-4">
-        <div className="flex flex-wrap justify-between items-start gap-4 pb-4 border-b-2 border-gray-200">
-          <div>
-            <h2 data-testid="order-detail-title" className="text-2xl font-bold text-gray-900">
-              Order #{order.id}
-            </h2>
-            <p className="text-sm text-gray-600">
-              {new Date(order.orderDate).toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-              })}
-            </p>
-          </div>
-          <span data-testid="order-detail-status" className="badge">
-            {order.status}
-          </span>
+      <div className="mb-10 flex flex-wrap items-end justify-between gap-4 border-b border-stone-200 pb-8">
+        <div>
+          <p className="section-label mb-3">
+            Placed{' '}
+            {new Date(order.orderDate).toLocaleDateString('en-US', {
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric',
+            })}
+          </p>
+          <h2 data-testid="order-detail-title" className="page-title">
+            Order #{order.id}
+          </h2>
+        </div>
+        <span data-testid="order-detail-status" className={`badge ${badge} px-3 py-1 text-sm`}>
+          {order.status}
+        </span>
+      </div>
+
+      <div className="grid items-start gap-10 lg:grid-cols-3">
+        <div className="space-y-8 lg:col-span-2">
+          <section>
+            <h3 className="section-label mb-3">Items</h3>
+            <div
+              data-testid="order-detail-items"
+              className="divide-y divide-stone-200 rounded-lg border border-stone-200 bg-white"
+            >
+              {order.orderItems.map((item) => (
+                <div
+                  key={item.id}
+                  data-testid={`order-detail-item-${item.bookId}`}
+                  className="flex items-start justify-between gap-4 p-5"
+                >
+                  <div className="min-w-0">
+                    <p className="font-serif text-lg font-semibold leading-snug text-ink-900">
+                      {item.book?.title ?? 'Unknown'}
+                    </p>
+                    <p className="text-sm text-stone-600">{item.book?.author ?? 'Unknown'}</p>
+                    <p className="num mt-1 text-xs text-stone-500">
+                      ${item.price.toFixed(2)} x {item.quantity}
+                    </p>
+                  </div>
+                  <p className="num shrink-0 font-medium text-ink-900">
+                    ${((Math.round(item.price * 100) * item.quantity) / 100).toFixed(2)}
+                  </p>
+                </div>
+              ))}
+              <div className="flex items-baseline justify-between bg-stone-50 p-5">
+                <span className="font-medium text-ink-900">Total</span>
+                <span data-testid="order-detail-total" className="num font-serif text-3xl font-semibold text-ink-900">
+                  ${order.totalAmount.toFixed(2)}
+                </span>
+              </div>
+            </div>
+          </section>
+
+          {order.events && order.events.length > 0 && (
+            <section data-testid="order-detail-history">
+              <h3 className="section-label mb-4">Status history</h3>
+              <ol className="relative space-y-6 border-l border-stone-300 pl-6">
+                {order.events.map((event) => (
+                  <li key={event.id} data-testid={`order-detail-history-${event.id}`} className="relative">
+                    <span
+                      aria-hidden="true"
+                      className="absolute -left-[29px] top-1.5 h-2.5 w-2.5 rounded-full border-2 border-white bg-brass-500 ring-1 ring-brass-500"
+                    />
+                    <p className="text-sm font-medium text-ink-900">
+                      {event.fromStatus ? `${event.fromStatus} to ${event.toStatus}` : `Placed as ${event.toStatus}`}
+                    </p>
+                    <p className="text-xs text-stone-500">
+                      {new Date(event.createdAt).toLocaleString('en-US')}
+                    </p>
+                  </li>
+                ))}
+              </ol>
+            </section>
+          )}
         </div>
 
-        <div className="py-4 text-sm text-gray-700">
-          <p data-testid="order-detail-customer">
-            {order.customerName} · {order.customerEmail}
+        <aside className="rounded-lg border border-stone-200 bg-white p-6">
+          <h3 className="section-label mb-4">Delivery</h3>
+          <p data-testid="order-detail-customer" className="mb-1 font-medium text-ink-900">
+            {order.customerName}
           </p>
-          <p data-testid="order-detail-address" className="whitespace-pre-line">
+          <p className="mb-4 text-sm text-stone-600">{order.customerEmail}</p>
+          <p data-testid="order-detail-address" className="whitespace-pre-line text-sm text-stone-700">
             {order.customerAddress}
           </p>
-        </div>
-
-        <div data-testid="order-detail-items" className="space-y-2 bg-white rounded-xl p-4 border border-gray-100">
-          {order.orderItems.map((item) => (
-            <div
-              key={item.id}
-              data-testid={`order-detail-item-${item.bookId}`}
-              className="flex justify-between items-center py-2 border-b last:border-b-0 border-gray-100"
-            >
-              <div>
-                <p className="font-semibold text-gray-900">{item.book?.title ?? 'Unknown'}</p>
-                <p className="text-sm text-gray-600">by {item.book?.author ?? 'Unknown'}</p>
-                <p className="text-xs text-gray-500 mt-1">
-                  ${item.price.toFixed(2)} × {item.quantity}
-                </p>
-              </div>
-              <p className="text-lg font-bold text-primary-600">
-                ${(Math.round(item.price * 100) * item.quantity / 100).toFixed(2)}
-              </p>
-            </div>
-          ))}
-        </div>
-
-        {order.events && order.events.length > 0 && (
-          <div data-testid="order-detail-history" className="mt-6">
-            <h3 className="font-semibold text-gray-700 mb-2">Status history</h3>
-            <ol className="space-y-1 text-sm text-gray-700">
-              {order.events.map((event) => (
-                <li key={event.id} data-testid={`order-detail-history-${event.id}`}>
-                  <span className="font-semibold">
-                    {event.fromStatus ? `${event.fromStatus} → ${event.toStatus}` : `Placed as ${event.toStatus}`}
-                  </span>
-                  <span className="text-gray-500"> · {new Date(event.createdAt).toLocaleString('en-US')}</span>
-                </li>
-              ))}
-            </ol>
-          </div>
-        )}
-
-        <div className="flex justify-between items-center pt-4">
-          <span className="text-gray-600 uppercase tracking-wide text-sm">Total</span>
-          <span data-testid="order-detail-total" className="text-3xl font-bold text-gradient">
-            ${order.totalAmount.toFixed(2)}
-          </span>
-        </div>
+        </aside>
       </div>
     </div>
   )

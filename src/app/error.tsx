@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect } from 'react'
+import { AlertIcon } from '@/components/icons'
 
 export default function ErrorPage({
   error,
@@ -14,10 +15,12 @@ export default function ErrorPage({
   }, [error])
 
   return (
-    <div data-testid="error-page" className="text-center py-20">
-      <div className="text-6xl mb-4">⚠️</div>
-      <h2 className="text-3xl font-bold text-gray-900 mb-2">Something went wrong</h2>
-      <p className="text-gray-600 mb-6">Please try again. If the problem continues, come back later.</p>
+    <div data-testid="error-page" className="empty-state">
+      <AlertIcon className="mx-auto mb-4 h-8 w-8 text-danger" />
+      <h2 className="panel-title mb-2">Something went wrong</h2>
+      <p className="mb-6 text-sm text-stone-600">
+        Please try again. If the problem continues, come back later.
+      </p>
       <button data-testid="error-retry-button" onClick={reset} className="btn btn-primary">
         Try again
       </button>

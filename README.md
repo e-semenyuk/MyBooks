@@ -53,6 +53,10 @@ npm run dev                       # http://localhost:3000
 | `npm run db:reset` | Recreate the database from migrations |
 | `npm run openapi` | Regenerate `docs/openapi.json` after API changes (a test fails when it is stale) |
 
+## Design
+
+Ink and brass: near-black ink for structure, warm greys for surfaces, one muted brass accent. Source Serif 4 for titles and prices, Inter for interface text. Colors, shared component classes (`btn`, `input`, `card`, `badge`, `data-table`) and the toast style are defined in `tailwind.config.ts` and `src/app/globals.css`; icons are in `src/components/icons.tsx`. Book covers are drawn by `BookCover` until real cover images exist.
+
 ## API
 
 The REST API is described in [docs/openapi.json](docs/openapi.json) and served at `/api/openapi`. Errors always look like `{ "error": "message", "code": "STABLE_CODE" }`. Prices are dollars with two decimals; the database stores integer cents.
