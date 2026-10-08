@@ -265,6 +265,29 @@ An unknown or non-numeric id shows the not-found page (`not-found-page`).
 | `admin-book-categories` | `<fieldset>` | Category checkboxes on the book form |
 | `admin-book-category-{slug}` | `<input>` | Category checkbox |
 
+## Saved addresses (profile page and checkout)
+
+| Test ID | Element | Description |
+|---------|---------|-------------|
+| `addresses-section` | `<section>` | Profile section |
+| `address-add-button` | `<button>` | Open the form |
+| `address-form` | `<form>` | Add or edit form |
+| `address-label-input` | `<input>` | Label such as Home (optional) |
+| `address-fullname-input` | `<input>` | Full name |
+| `address-street-input` | `<input>` | Street |
+| `address-city-input` | `<input>` | City |
+| `address-postal-input` | `<input>` | Postal code |
+| `address-country-input` | `<input>` | Country |
+| `address-save-button` | `<button>` | Save (text is "Save address" or "Update address") |
+| `address-cancel-button` | `<button>` | Close the form |
+| `addresses-empty` | `<p>` | No saved addresses |
+| `addresses-list` | `<div>` | List container |
+| `address-item-{id}` | `<div>` | One saved address |
+| `address-edit-{id}` / `address-delete-{id}` | `<button>` | Edit or delete (delete asks for confirmation) |
+| `saved-address-select` | `<select>` | Checkout: pick a saved address; fills name and address. Shown only when the user has one |
+
+At most 10 addresses per user. Another user's address answers 404.
+
 ## Usage Examples
 
 ### Cypress/Playwright Tests

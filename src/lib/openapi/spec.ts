@@ -3,6 +3,7 @@ import { ORDER_STATUSES } from '@/lib/orderStatus'
 import {
   BOOK_SORTS,
   addToCartSchema,
+  addressSchema,
   categorySchema,
   createBookSchema,
   createOrderSchema,
@@ -61,6 +62,7 @@ function buildDocument(): Json {
     tags: [
       { name: 'Books' },
       { name: 'Categories' },
+      { name: 'Addresses' },
       { name: 'Cart' },
       { name: 'Orders' },
       { name: 'Accounts' },
@@ -172,6 +174,52 @@ function buildDocument(): Json {
             ...authErrors,
             '404': errorResponse('CATEGORY_NOT_FOUND'),
             '409': errorResponse('CATEGORY_IN_USE'),
+          },
+        },
+      },
+      '/api/addresses': {
+        get: {
+          tags: ['Addresses'],
+          summary: 'Saved addresses of the signed-in user, oldest first',
+          security: [{ sessionCookie: [] }],
+          responses: { '200': { description: 'Addresses', content: jsonContent({ type: 'array', items: ref('Address') }) }, '401': authErrors['401'] },
+        },
+        post: {
+          tags: ['Addresses'],
+          summary: 'Save an address (at most 10 per user)',
+          security: [{ sessionCookie: [] }],
+          requestBody: { required: true, content: jsonContent(body(addressSchema)) },
+          responses: {
+            '201': { description: 'Saved', content: jsonContent(ref('Address')) },
+            '400': errorResponse('VALIDATION_ERROR'),
+            '401': authErrors['401'],
+            '409': errorResponse('ADDRESS_LIMIT'),
+          },
+        },
+      },
+      '/api/addresses/{id}': {
+        parameters: [idParam('Address id')],
+        put: {
+          tags: ['Addresses'],
+          summary: 'Replace an address. Another user\'s address answers 404.',
+          security: [{ sessionCookie: [] }],
+          requestBody: { required: true, content: jsonContent(body(addressSchema)) },
+          responses: {
+            '200': { description: 'Updated', content: jsonContent(ref('Address')) },
+            '400': errorResponse('VALIDATION_ERROR or INVALID_ID'),
+            '401': authErrors['401'],
+            '404': errorResponse('ADDRESS_NOT_FOUND'),
+          },
+        },
+        delete: {
+          tags: ['Addresses'],
+          summary: 'Delete an address. Another user\'s address answers 404.',
+          security: [{ sessionCookie: [] }],
+          responses: {
+            '200': { description: 'Deleted', content: jsonContent({ type: 'object', properties: { message: { type: 'string' } } }) },
+            '400': standardErrors['400'],
+            '401': authErrors['401'],
+            '404': errorResponse('ADDRESS_NOT_FOUND'),
           },
         },
       },
@@ -359,6 +407,14 @@ function buildDocument(): Json {
             details: { type: 'array', items: { type: 'object', properties: { path: { type: 'string' }, message: { type: 'string' } } } },
           },
         },
+        Address: {
+          type: 'object',
+          required: ['id', 'fullName', 'street', 'city', 'postalCode', 'country'],
+          properties: {
+            id: { type: 'integer' }, label: { type: 'string' }, fullName: { type: 'string' }, street: { type: 'string' },
+            city: { type: 'string' }, postalCode: { type: 'string' }, country: { type: 'string' },
+          },
+        },
         Quote: {
           type: 'object',
           required: ['shippingMethod', 'subtotal', 'discount', 'shipping', 'tax', 'total'],
@@ -462,6 +518,10 @@ const OPERATION_IDS: Record<string, string> = {
   'post /api/categories': 'createCategory',
   'put /api/categories/{id}': 'renameCategory',
   'delete /api/categories/{id}': 'deleteCategory',
+  'get /api/addresses': 'listAddresses',
+  'post /api/addresses': 'createAddress',
+  'put /api/addresses/{id}': 'updateAddress',
+  'delete /api/addresses/{id}': 'deleteAddress',
   'get /api/cart': 'getCart',
   'post /api/cart': 'addToCart',
   'delete /api/cart': 'clearCart',

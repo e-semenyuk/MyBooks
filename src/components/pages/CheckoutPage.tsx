@@ -5,6 +5,8 @@ import { useSession } from 'next-auth/react'
 import { ArrowRightIcon } from '@/components/icons'
 import { SHIPPING_OPTIONS, SHIPPING_METHODS, ShippingMethodName } from '@/lib/pricing'
 import { formatMoney, toCents } from '@/lib/money'
+import { formatAddress } from '@/lib/address'
+import type { SavedAddress } from '@/components/AddressBook'
 
 interface CheckoutPageProps {
   showToast: (message: string, type: 'success' | 'error') => void
@@ -36,6 +38,7 @@ export default function CheckoutPage({ showToast, updateCartCount, navigateTo }:
   const [promoError, setPromoError] = useState<string | null>(null)
   const [quote, setQuote] = useState<Quote | null>(null)
   const [cartEmpty, setCartEmpty] = useState(false)
+  const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>([])
 
   // Pre-fill form with user data if logged in
   useEffect(() => {
@@ -47,6 +50,23 @@ export default function CheckoutPage({ showToast, updateCartCount, navigateTo }:
       }))
     }
   }, [session])
+
+  useEffect(() => {
+    fetch('/api/addresses')
+      .then((response) => (response.ok ? response.json() : []))
+      .then(setSavedAddresses)
+      .catch(() => setSavedAddresses([]))
+  }, [])
+
+  const chooseSavedAddress = (value: string) => {
+    const address = savedAddresses.find((a) => String(a.id) === value)
+    if (!address) return
+    setFormData((current) => ({
+      ...current,
+      customerName: address.fullName,
+      customerAddress: formatAddress(address),
+    }))
+  }
 
   // Price the cart whenever the shipping method or the applied code changes
   const requestQuote = useCallback(
@@ -188,6 +208,29 @@ export default function CheckoutPage({ showToast, updateCartCount, navigateTo }:
                 className="input"
               />
             </div>
+
+            {savedAddresses.length > 0 && (
+              <div>
+                <label htmlFor="savedAddress" className="label">
+                  Saved address
+                </label>
+                <select
+                  id="savedAddress"
+                  data-testid="saved-address-select"
+                  defaultValue=""
+                  onChange={(e) => chooseSavedAddress(e.target.value)}
+                  className="input"
+                >
+                  <option value="">Enter an address manually</option>
+                  {savedAddresses.map((address) => (
+                    <option key={address.id} value={address.id}>
+                      {address.label ? `${address.label}: ` : ''}
+                      {address.street}, {address.city}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
 
             <div>
               <label htmlFor="customerAddress" className="label">

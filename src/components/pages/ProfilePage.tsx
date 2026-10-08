@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useSession } from 'next-auth/react'
 import { ArrowRightIcon } from '@/components/icons'
+import AddressBook from '@/components/AddressBook'
 
 interface ProfilePageProps {
   showToast: (message: string, type: 'success' | 'error') => void
@@ -78,6 +79,8 @@ export default function ProfilePage({ showToast }: ProfilePageProps) {
           </span>
         </p>
       </div>
+
+      <AddressBook showToast={showToast} />
 
       <div data-testid="order-history-section">
         <div className="flex items-baseline justify-between border-t-2 border-ink-950 pb-5 pt-5">

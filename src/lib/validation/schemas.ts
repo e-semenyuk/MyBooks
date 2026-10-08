@@ -137,3 +137,12 @@ export const categorySchema = z.object({
     .min(1, 'Category name is required')
     .max(60, 'Category name must be at most 60 characters'),
 })
+
+export const addressSchema = z.object({
+  label: z.string().trim().max(30, 'Label must be at most 30 characters').optional().default(''),
+  fullName: text('Full name', 100),
+  street: text('Street', 200),
+  city: text('City', 100),
+  postalCode: text('Postal code', 20),
+  country: text('Country', 60),
+})

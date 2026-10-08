@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   addToCartSchema,
+  addressSchema,
   bookListQuerySchema,
   categorySchema,
   createBookSchema,
@@ -186,5 +187,28 @@ describe('createBookSchema categories', () => {
 describe('quoteSchema', () => {
   it('defaults to standard shipping with no promo', () => {
     expect(quoteSchema.parse({})).toEqual({ shippingMethod: 'STANDARD' })
+  })
+})
+
+describe('addressSchema', () => {
+  const valid = { fullName: 'Jane Doe', street: '1 Main St', city: 'New York', postalCode: '10001', country: 'USA' }
+
+  it('accepts an address and defaults the label to empty', () => {
+    expect(addressSchema.parse(valid)).toEqual({ ...valid, label: '' })
+  })
+
+  it('trims text and keeps the label', () => {
+    expect(addressSchema.parse({ ...valid, label: ' Home ', city: ' Paris ' })).toMatchObject({ label: 'Home', city: 'Paris' })
+  })
+
+  it.each([
+    [{ ...valid, fullName: '' }, 'Full name is required'],
+    [{ ...valid, street: '  ' }, 'Street is required'],
+    [{ ...valid, postalCode: 'x'.repeat(21) }, 'Postal code must be at most 20 characters'],
+    [{ ...valid, label: 'x'.repeat(31) }, 'Label must be at most 30 characters'],
+  ])('rejects %j', (input, message) => {
+    const result = addressSchema.safeParse(input)
+    expect(result.success).toBe(false)
+    expect(result.error?.issues[0]?.message).toBe(message)
   })
 })
