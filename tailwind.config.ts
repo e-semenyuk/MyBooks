@@ -1,5 +1,9 @@
 import type { Config } from 'tailwindcss'
+import defaultTheme from 'tailwindcss/defaultTheme'
 
+// Ink and brass: near-black ink for structure, warm greys for surfaces,
+// one muted brass accent. Brass 500 is for fills and rules; use brass 600 or
+// 700 for text so it keeps AA contrast on white and on stone 50.
 const config: Config = {
   content: [
     './src/pages/**/*.{js,ts,jsx,tsx,mdx}',
@@ -9,62 +13,94 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        ink: {
+          50: '#F4F5F7',
+          100: '#E4E7EB',
+          200: '#C7CDD6',
+          300: '#9AA3B0',
+          400: '#6B7585',
+          500: '#4A5565',
+          600: '#364050',
+          700: '#2B3441',
+          800: '#1E2530',
+          900: '#151A22',
+          950: '#0E1116',
+        },
+        stone: {
+          50: '#FAF9F7',
+          100: '#F3F1ED',
+          200: '#E7E4DE',
+          300: '#D3CFC6',
+          400: '#A8A398',
+          500: '#6F6A60',
+          600: '#5A564E',
+          700: '#4A463F',
+          800: '#2F2C27',
+          900: '#1C1A17',
+        },
+        brass: {
+          100: '#F1E9D6',
+          300: '#CDB27A',
+          500: '#9A7B3F',
+          600: '#7F6430',
+          700: '#6B5326',
+        },
+        success: { DEFAULT: '#2F6B4F', soft: '#E6F1EB' },
+        warning: { DEFAULT: '#8A5A12', soft: '#F8EEDC' },
+        danger: { DEFAULT: '#9B2C2C', soft: '#F8E6E6' },
+        // Old names kept pointing at the ink scale until every page is converted
         primary: {
-          50: '#f0f9ff',
-          100: '#e0f2fe',
-          200: '#bae6fd',
-          300: '#7dd3fc',
-          400: '#38bdf8',
-          500: '#0ea5e9',
-          600: '#0284c7',
-          700: '#0369a1',
-          800: '#075985',
-          900: '#0c4a6e',
+          50: '#F4F5F7',
+          100: '#E4E7EB',
+          200: '#C7CDD6',
+          300: '#9AA3B0',
+          400: '#6B7585',
+          500: '#2B3441',
+          600: '#1E2530',
+          700: '#151A22',
+          800: '#0E1116',
+          900: '#0E1116',
         },
         secondary: {
-          50: '#f8fafc',
-          100: '#f1f5f9',
-          200: '#e2e8f0',
-          300: '#cbd5e1',
-          400: '#94a3b8',
-          500: '#64748b',
-          600: '#475569',
-          700: '#334155',
-          800: '#1e293b',
-          900: '#0f172a',
+          50: '#FAF9F7',
+          100: '#F3F1ED',
+          200: '#E7E4DE',
+          300: '#D3CFC6',
+          400: '#A8A398',
+          500: '#6F6A60',
+          600: '#5A564E',
+          700: '#4A463F',
+          800: '#2F2C27',
+          900: '#1C1A17',
         },
-        success: '#10b981',
-        danger: '#ef4444',
-        warning: '#f59e0b',
       },
-      backgroundImage: {
-        'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
-        'gradient-primary': 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        'gradient-sunset': 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
-        'gradient-ocean': 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+      fontFamily: {
+        sans: ['var(--font-sans)', ...defaultTheme.fontFamily.sans],
+        serif: ['var(--font-serif)', 'Georgia', 'Cambria', 'Times New Roman', 'serif'],
+      },
+      borderRadius: {
+        DEFAULT: '6px',
+        md: '6px',
+        lg: '8px',
       },
       boxShadow: {
-        'soft': '0 2px 15px -3px rgba(0, 0, 0, 0.07), 0 10px 20px -2px rgba(0, 0, 0, 0.04)',
-        'card': '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-        'card-hover': '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+        float: '0 8px 24px -8px rgba(14, 17, 22, 0.18), 0 2px 6px rgba(14, 17, 22, 0.06)',
+      },
+      maxWidth: {
+        page: '1200px',
       },
       animation: {
-        'fade-in': 'fadeIn 0.5s ease-out',
-        'slide-up': 'slideUp 0.5s ease-out',
-        'scale-in': 'scaleIn 0.3s ease-out',
+        'fade-in': 'fadeIn 0.2s ease-out',
+        shimmer: 'shimmer 1.6s ease-in-out infinite',
       },
       keyframes: {
         fadeIn: {
           '0%': { opacity: '0' },
           '100%': { opacity: '1' },
         },
-        slideUp: {
-          '0%': { opacity: '0', transform: 'translateY(20px)' },
-          '100%': { opacity: '1', transform: 'translateY(0)' },
-        },
-        scaleIn: {
-          '0%': { opacity: '0', transform: 'scale(0.95)' },
-          '100%': { opacity: '1', transform: 'scale(1)' },
+        shimmer: {
+          '0%, 100%': { opacity: '1' },
+          '50%': { opacity: '0.55' },
         },
       },
     },
@@ -72,4 +108,3 @@ const config: Config = {
   plugins: [],
 }
 export default config
-

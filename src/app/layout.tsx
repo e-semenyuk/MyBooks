@@ -1,14 +1,15 @@
 import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
+import { Inter, Source_Serif_4 } from 'next/font/google'
 import './globals.css'
 import AppProviders from '@/components/providers/AppProviders'
 import AppShell from '@/components/AppShell'
 
-const inter = Inter({ subsets: ['latin'] })
+const sans = Inter({ subsets: ['latin'], variable: '--font-sans', display: 'swap' })
+const serif = Source_Serif_4({ subsets: ['latin'], variable: '--font-serif', display: 'swap' })
 
 export const metadata: Metadata = {
   title: 'Digital Bookstore',
-  description: 'A modern digital bookstore built with Next.js and Supabase',
+  description: 'A curated catalog of books, delivered.',
 }
 
 export default function RootLayout({
@@ -17,8 +18,8 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
-      <body className={inter.className}>
+    <html lang="en" className={`${sans.variable} ${serif.variable}`}>
+      <body className="font-sans">
         <AppProviders>
           <AppShell>{children}</AppShell>
         </AppProviders>
@@ -26,4 +27,3 @@ export default function RootLayout({
     </html>
   )
 }
-

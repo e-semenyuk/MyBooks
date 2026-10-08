@@ -1,21 +1,9 @@
 import { toast } from 'sonner'
 
-const base = {
-  duration: 3000,
-  style: {
-    color: 'white',
-    border: 'none',
-    borderRadius: '12px',
-    fontSize: '14px',
-    fontWeight: '600',
-  },
-}
-
+// Colours and shape come from globals.css so every toast looks the same.
 export function showToast(message: string, type: 'success' | 'error') {
-  const background = type === 'success' ? '#10b981' : '#ef4444'
-  const options = { ...base, style: { ...base.style, background } }
-  if (type === 'success') toast.success(message, options)
-  else toast.error(message, options)
+  if (type === 'success') toast.success(message, { duration: 3000 })
+  else toast.error(message, { duration: 4000 })
 }
 
 export type ShowToast = typeof showToast

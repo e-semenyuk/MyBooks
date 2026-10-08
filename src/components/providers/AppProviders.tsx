@@ -60,7 +60,6 @@ export default function AppProviders({ children }: { children: React.ReactNode }
         <Toaster
           position="top-center"
           expand={true}
-          richColors
           closeButton
           toastOptions={{ className: 'sonner-toast' }}
         />
