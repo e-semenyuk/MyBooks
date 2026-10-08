@@ -19,3 +19,10 @@ Every email is saved in the `email_outbox` table and, when `SMTP_HOST` is set, s
 ## Set a password hash by hand
 
 `scripts/hash-password.ts` prints a bcrypt hash for a password if you need to insert a user directly.
+
+## Deactivated accounts and role changes
+
+Admins can deactivate an account (`PATCH /api/admin/users/{id}` with `active: false`). A deactivated user cannot sign in
+(the message "This account is deactivated" is shown only after a correct password, so it does not reveal which emails
+have accounts) and a session they already have stops working on the next request. Role changes also apply on the next
+request, even though the session token still carries the old role. Admins cannot change or deactivate their own account.

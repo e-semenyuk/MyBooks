@@ -6,15 +6,24 @@ import { useSession } from 'next-auth/react'
 import { EditIcon, TrashIcon } from '@/components/icons'
 import BookCover from '@/components/BookCover'
 import AdminReviews from '@/components/admin/AdminReviews'
+import AdminUsers from '@/components/admin/AdminUsers'
+import AdminDashboard from '@/components/admin/AdminDashboard'
+import AdminAudit from '@/components/admin/AdminAudit'
+import AdminCatalogTools from '@/components/admin/AdminCatalogTools'
 
 interface AdminPageProps {
   showToast: (message: string, type: 'success' | 'error') => void
 }
 
-type Tab = 'books' | 'orders' | 'categories' | 'reviews'
+type Tab = 'books' | 'orders' | 'categories' | 'reviews' | 'users' | 'dashboard' | 'audit'
 
 // Tabs rendered by their own components
-const EXTRA_TABS: { key: Tab; label: string }[] = [{ key: 'reviews', label: 'Reviews' }]
+const EXTRA_TABS: { key: Tab; label: string }[] = [
+  { key: 'reviews', label: 'Reviews' },
+  { key: 'users', label: 'Users' },
+  { key: 'dashboard', label: 'Sales' },
+  { key: 'audit', label: 'Audit log' },
+]
 
 interface CategoryRow {
   id: number
@@ -375,238 +384,246 @@ export default function AdminPage({ showToast }: AdminPageProps) {
       </div>
 
       {activeTab === 'reviews' && <AdminReviews showToast={showToast} />}
+      {activeTab === 'users' && <AdminUsers showToast={showToast} />}
+      {activeTab === 'dashboard' && <AdminDashboard showToast={showToast} />}
+      {activeTab === 'audit' && <AdminAudit showToast={showToast} />}
 
       {activeTab === 'books' && (
-        <div className="grid items-start gap-12 lg:grid-cols-3">
-          <div className="lg:col-span-1">
-            <div className="border-2 border-ink-950 lg:sticky lg:top-24">
-              <div className="bg-ink-950 px-6 py-4">
-                <h3 className="font-display text-xl font-bold tracking-tight text-white">
-                  {editingBook ? 'Edit Book' : 'Add New Book'}
-                </h3>
-              </div>
-
-              <form data-testid="admin-book-form" onSubmit={handleBookSubmit} className="space-y-4 p-6">
-                <div>
-                  <label htmlFor="book-title" className="label">Title *</label>
-                  <input
-                    id="book-title"
-                    data-testid="admin-book-title-input"
-                    type="text"
-                    value={bookForm.title}
-                    onChange={(e) => setBookForm({ ...bookForm, title: e.target.value })}
-                    required
-                    className="input"
-                  />
+        <>
+          <div className="grid items-start gap-12 lg:grid-cols-3">
+            <div className="lg:col-span-1">
+              <div className="border-2 border-ink-950 lg:sticky lg:top-24">
+                <div className="bg-ink-950 px-6 py-4">
+                  <h3 className="font-display text-xl font-bold tracking-tight text-white">
+                    {editingBook ? 'Edit Book' : 'Add New Book'}
+                  </h3>
                 </div>
 
-                <div>
-                  <label htmlFor="book-author" className="label">Author *</label>
-                  <input
-                    id="book-author"
-                    data-testid="admin-book-author-input"
-                    type="text"
-                    value={bookForm.author}
-                    onChange={(e) => setBookForm({ ...bookForm, author: e.target.value })}
-                    required
-                    className="input"
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="book-isbn" className="label">ISBN</label>
-                  <input
-                    id="book-isbn"
-                    data-testid="admin-book-isbn-input"
-                    type="text"
-                    value={bookForm.isbn}
-                    onChange={(e) => setBookForm({ ...bookForm, isbn: e.target.value })}
-                    className="input"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
+                <form data-testid="admin-book-form" onSubmit={handleBookSubmit} className="space-y-4 p-6">
                   <div>
-                    <label htmlFor="book-price" className="label">Price *</label>
+                    <label htmlFor="book-title" className="label">Title *</label>
                     <input
-                      id="book-price"
-                      data-testid="admin-book-price-input"
-                      type="number"
-                      step="0.01"
-                      value={bookForm.price}
-                      onChange={(e) => setBookForm({ ...bookForm, price: e.target.value })}
+                      id="book-title"
+                      data-testid="admin-book-title-input"
+                      type="text"
+                      value={bookForm.title}
+                      onChange={(e) => setBookForm({ ...bookForm, title: e.target.value })}
                       required
-                      className="input num"
+                      className="input"
                     />
                   </div>
 
                   <div>
-                    <label htmlFor="book-stock" className="label">Stock *</label>
+                    <label htmlFor="book-author" className="label">Author *</label>
                     <input
-                      id="book-stock"
-                      data-testid="admin-book-stock-input"
-                      type="number"
-                      value={bookForm.stockQuantity}
-                      onChange={(e) => setBookForm({ ...bookForm, stockQuantity: e.target.value })}
+                      id="book-author"
+                      data-testid="admin-book-author-input"
+                      type="text"
+                      value={bookForm.author}
+                      onChange={(e) => setBookForm({ ...bookForm, author: e.target.value })}
                       required
-                      className="input num"
+                      className="input"
                     />
                   </div>
-                </div>
 
-                <div>
-                  <label htmlFor="book-description" className="label">Description</label>
-                  <textarea
-                    id="book-description"
-                    data-testid="admin-book-description-input"
-                    value={bookForm.description}
-                    onChange={(e) => setBookForm({ ...bookForm, description: e.target.value })}
-                    rows={3}
-                    className="input"
-                  />
-                </div>
+                  <div>
+                    <label htmlFor="book-isbn" className="label">ISBN</label>
+                    <input
+                      id="book-isbn"
+                      data-testid="admin-book-isbn-input"
+                      type="text"
+                      value={bookForm.isbn}
+                      onChange={(e) => setBookForm({ ...bookForm, isbn: e.target.value })}
+                      className="input"
+                    />
+                  </div>
 
-                <div>
-                  <label htmlFor="book-cover" className="label">Cover image (JPEG or PNG, up to 2 MB)</label>
-                  {editingBook?.coverUrl && (
-                    <div className="mb-3 flex items-end gap-3">
-                      <BookCover id={editingBook.id} coverUrl={editingBook.coverUrl} size="sm" />
-                      <button
-                        data-testid="admin-book-cover-remove-button"
-                        type="button"
-                        onClick={removeCover}
-                        className="btn btn-danger btn-sm"
-                      >
-                        Remove cover
-                      </button>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label htmlFor="book-price" className="label">Price *</label>
+                      <input
+                        id="book-price"
+                        data-testid="admin-book-price-input"
+                        type="number"
+                        step="0.01"
+                        value={bookForm.price}
+                        onChange={(e) => setBookForm({ ...bookForm, price: e.target.value })}
+                        required
+                        className="input num"
+                      />
                     </div>
-                  )}
-                  <input
-                    key={fileInputKey}
-                    id="book-cover"
-                    data-testid="admin-book-cover-input"
-                    type="file"
-                    accept="image/png,image/jpeg"
-                    onChange={(e) => setCoverFile(e.target.files?.[0] ?? null)}
-                    className="block w-full text-sm file:mr-3 file:border file:border-ink-950 file:bg-white file:px-3 file:py-2 file:text-sm file:font-semibold hover:file:bg-ink-950 hover:file:text-white"
-                  />
-                </div>
 
-                {categories.length > 0 && (
-                  <fieldset data-testid="admin-book-categories">
-                    <legend className="label">Categories</legend>
-                    <div className="grid grid-cols-2 gap-x-3 gap-y-2">
-                      {categories.map((category) => (
-                        <label key={category.id} className="flex items-center gap-2 text-sm text-ink-800">
-                          <input
-                            data-testid={`admin-book-category-${category.slug}`}
-                            type="checkbox"
-                            checked={bookForm.categoryIds.includes(category.id)}
-                            onChange={(e) =>
-                              setBookForm({
-                                ...bookForm,
-                                categoryIds: e.target.checked
-                                  ? [...bookForm.categoryIds, category.id]
-                                  : bookForm.categoryIds.filter((id) => id !== category.id),
-                              })
-                            }
-                            className="h-4 w-4 accent-cobalt-500"
-                          />
-                          {category.name}
-                        </label>
-                      ))}
+                    <div>
+                      <label htmlFor="book-stock" className="label">Stock *</label>
+                      <input
+                        id="book-stock"
+                        data-testid="admin-book-stock-input"
+                        type="number"
+                        value={bookForm.stockQuantity}
+                        onChange={(e) => setBookForm({ ...bookForm, stockQuantity: e.target.value })}
+                        required
+                        className="input num"
+                      />
                     </div>
-                  </fieldset>
-                )}
+                  </div>
 
-                <div className="flex gap-2 pt-2">
-                  <button data-testid="admin-save-book-button" type="submit" className="btn btn-primary flex-1">
-                    {editingBook ? 'Update Book' : 'Add Book'}
-                  </button>
-                  {editingBook && (
-                    <button
-                      data-testid="admin-cancel-edit-button"
-                      type="button"
-                      onClick={resetForm}
-                      className="btn btn-secondary"
-                    >
-                      Cancel
-                    </button>
-                  )}
-                </div>
-              </form>
-            </div>
-          </div>
+                  <div>
+                    <label htmlFor="book-description" className="label">Description</label>
+                    <textarea
+                      id="book-description"
+                      data-testid="admin-book-description-input"
+                      value={bookForm.description}
+                      onChange={(e) => setBookForm({ ...bookForm, description: e.target.value })}
+                      rows={3}
+                      className="input"
+                    />
+                  </div>
 
-          <div data-testid="admin-books-list" className="lg:col-span-2">
-            {loading ? (
-              <div aria-busy="true" className="space-y-px">
-                {Array.from({ length: 4 }).map((_, i) => (
-                  <div key={i} className="skeleton h-28 w-full" />
-                ))}
-              </div>
-            ) : (
-              <div className="border-t-2 border-ink-950">
-                {books.map((book, index) => (
-                  <div
-                    key={book.id}
-                    data-testid={`admin-book-item-${book.id}`}
-                    className="grid grid-cols-[2rem_1fr_auto] gap-x-4 border-b border-mist-200 py-5"
-                  >
-                    <span className="pt-1.5 font-mono text-xs text-ink-500">
-                      {String(index + 1).padStart(2, '0')}
-                    </span>
-                    <div className="min-w-0">
-                      <h4 className="font-display text-xl font-bold leading-tight tracking-tight text-ink-950">
-                        {book.title}
-                      </h4>
-                      <p className="text-sm text-ink-600">by {book.author}</p>
-                      {book.categories && book.categories.length > 0 && (
-                        <p className="mt-1 font-mono text-[11px] uppercase tracking-[0.1em] text-ink-500">
-                          {book.categories.map((category) => category.name).join(' / ')}
-                        </p>
-                      )}
-                      {book.isbn && <p className="mt-1 font-mono text-xs text-ink-500">ISBN {book.isbn}</p>}
-                      {book.description && (
-                        <p className="mt-2 line-clamp-2 text-sm text-ink-600">{book.description}</p>
-                      )}
-                      <div className="mt-3 flex items-center gap-4">
-                        <span className="num font-display text-2xl font-extrabold tracking-tight text-ink-950">
-                          ${book.price.toFixed(2)}
-                        </span>
-                        <span
-                          className={`badge ${
-                            book.stockQuantity > 5 ? 'badge-success' : book.stockQuantity > 0 ? 'badge-warning' : 'badge-danger'
-                          }`}
+                  <div>
+                    <label htmlFor="book-cover" className="label">Cover image (JPEG or PNG, up to 2 MB)</label>
+                    {editingBook?.coverUrl && (
+                      <div className="mb-3 flex items-end gap-3">
+                        <BookCover id={editingBook.id} coverUrl={editingBook.coverUrl} size="sm" />
+                        <button
+                          data-testid="admin-book-cover-remove-button"
+                          type="button"
+                          onClick={removeCover}
+                          className="btn btn-danger btn-sm"
                         >
-                          Stock: {book.stockQuantity}
-                        </span>
+                          Remove cover
+                        </button>
+                      </div>
+                    )}
+                    <input
+                      key={fileInputKey}
+                      id="book-cover"
+                      data-testid="admin-book-cover-input"
+                      type="file"
+                      accept="image/png,image/jpeg"
+                      onChange={(e) => setCoverFile(e.target.files?.[0] ?? null)}
+                      className="block w-full text-sm file:mr-3 file:border file:border-ink-950 file:bg-white file:px-3 file:py-2 file:text-sm file:font-semibold hover:file:bg-ink-950 hover:file:text-white"
+                    />
+                  </div>
+
+                  {categories.length > 0 && (
+                    <fieldset data-testid="admin-book-categories">
+                      <legend className="label">Categories</legend>
+                      <div className="grid grid-cols-2 gap-x-3 gap-y-2">
+                        {categories.map((category) => (
+                          <label key={category.id} className="flex items-center gap-2 text-sm text-ink-800">
+                            <input
+                              data-testid={`admin-book-category-${category.slug}`}
+                              type="checkbox"
+                              checked={bookForm.categoryIds.includes(category.id)}
+                              onChange={(e) =>
+                                setBookForm({
+                                  ...bookForm,
+                                  categoryIds: e.target.checked
+                                    ? [...bookForm.categoryIds, category.id]
+                                    : bookForm.categoryIds.filter((id) => id !== category.id),
+                                })
+                              }
+                              className="h-4 w-4 accent-cobalt-500"
+                            />
+                            {category.name}
+                          </label>
+                        ))}
+                      </div>
+                    </fieldset>
+                  )}
+
+                  <div className="flex gap-2 pt-2">
+                    <button data-testid="admin-save-book-button" type="submit" className="btn btn-primary flex-1">
+                      {editingBook ? 'Update Book' : 'Add Book'}
+                    </button>
+                    {editingBook && (
+                      <button
+                        data-testid="admin-cancel-edit-button"
+                        type="button"
+                        onClick={resetForm}
+                        className="btn btn-secondary"
+                      >
+                        Cancel
+                      </button>
+                    )}
+                  </div>
+                </form>
+              </div>
+            </div>
+
+            <div data-testid="admin-books-list" className="lg:col-span-2">
+              {loading ? (
+                <div aria-busy="true" className="space-y-px">
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    <div key={i} className="skeleton h-28 w-full" />
+                  ))}
+                </div>
+              ) : (
+                <div className="border-t-2 border-ink-950">
+                  {books.map((book, index) => (
+                    <div
+                      key={book.id}
+                      data-testid={`admin-book-item-${book.id}`}
+                      className="grid grid-cols-[2rem_1fr_auto] gap-x-4 border-b border-mist-200 py-5"
+                    >
+                      <span className="pt-1.5 font-mono text-xs text-ink-500">
+                        {String(index + 1).padStart(2, '0')}
+                      </span>
+                      <div className="min-w-0">
+                        <h4 className="font-display text-xl font-bold leading-tight tracking-tight text-ink-950">
+                          {book.title}
+                        </h4>
+                        <p className="text-sm text-ink-600">by {book.author}</p>
+                        {book.categories && book.categories.length > 0 && (
+                          <p className="mt-1 font-mono text-[11px] uppercase tracking-[0.1em] text-ink-500">
+                            {book.categories.map((category) => category.name).join(' / ')}
+                          </p>
+                        )}
+                        {book.isbn && <p className="mt-1 font-mono text-xs text-ink-500">ISBN {book.isbn}</p>}
+                        {book.description && (
+                          <p className="mt-2 line-clamp-2 text-sm text-ink-600">{book.description}</p>
+                        )}
+                        <div className="mt-3 flex items-center gap-4">
+                          <span className="num font-display text-2xl font-extrabold tracking-tight text-ink-950">
+                            ${book.price.toFixed(2)}
+                          </span>
+                          <span
+                            className={`badge ${
+                              book.stockQuantity > 5 ? 'badge-success' : book.stockQuantity > 0 ? 'badge-warning' : 'badge-danger'
+                            }`}
+                          >
+                            Stock: {book.stockQuantity}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex shrink-0 items-start gap-1">
+                        <button
+                          data-testid={`admin-edit-book-${book.id}`}
+                          onClick={() => handleEditBook(book)}
+                          aria-label={`Edit ${book.title}`}
+                          className="p-2 text-ink-950 transition-colors hover:bg-ink-950 hover:text-white"
+                        >
+                          <EditIcon className="h-5 w-5" />
+                        </button>
+                        <button
+                          data-testid={`admin-delete-book-${book.id}`}
+                          onClick={() => handleDeleteBook(book.id)}
+                          aria-label={`Delete ${book.title}`}
+                          className="p-2 text-danger transition-colors hover:bg-danger hover:text-white"
+                        >
+                          <TrashIcon className="h-5 w-5" />
+                        </button>
                       </div>
                     </div>
-                    <div className="flex shrink-0 items-start gap-1">
-                      <button
-                        data-testid={`admin-edit-book-${book.id}`}
-                        onClick={() => handleEditBook(book)}
-                        aria-label={`Edit ${book.title}`}
-                        className="p-2 text-ink-950 transition-colors hover:bg-ink-950 hover:text-white"
-                      >
-                        <EditIcon className="h-5 w-5" />
-                      </button>
-                      <button
-                        data-testid={`admin-delete-book-${book.id}`}
-                        onClick={() => handleDeleteBook(book.id)}
-                        aria-label={`Delete ${book.title}`}
-                        className="p-2 text-danger transition-colors hover:bg-danger hover:text-white"
-                      >
-                        <TrashIcon className="h-5 w-5" />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
-        </div>
+          <div className="mt-16">
+            <AdminCatalogTools showToast={showToast} onImported={loadBooks} refreshKey={books} />
+          </div>
+        </>
       )}
 
       {activeTab === 'categories' && (

@@ -23,6 +23,7 @@ import {
   updateBookSchema,
   updateCartItemSchema,
   updateOrderStatusSchema,
+  updateUserSchema,
 } from '@/lib/validation/schemas'
 
 type Json = Record<string, any>
@@ -227,6 +228,94 @@ function buildDocument(): Json {
           summary: 'Remove a saved book (also fine when it was not saved)',
           security: [{ sessionCookie: [] }],
           responses: { '200': { description: 'Removed', content: jsonContent({ type: 'object' }) }, '400': standardErrors['400'], '401': authErrors['401'] },
+        },
+      },
+      '/api/admin/users': {
+        get: {
+          tags: ['Admin'],
+          summary: 'Admin: accounts with role, status and order count, oldest first. Paged.',
+          security: [{ sessionCookie: [] }],
+          parameters: [
+            { name: 'q', in: 'query', schema: { type: 'string' }, description: 'Part of the name or email' },
+            { name: 'role', in: 'query', schema: { type: 'string', enum: ['USER', 'ADMIN'] } },
+            { name: 'active', in: 'query', schema: { type: 'string', enum: ['true', 'false'] } },
+            { name: 'page', in: 'query', schema: { type: 'integer', default: 1 } },
+            { name: 'pageSize', in: 'query', schema: { type: 'integer', default: 25, maximum: 100 } },
+          ],
+          responses: { '200': { description: 'A page of users (no password data)', content: jsonContent({ type: 'object' }) }, '401': authErrors['401'], '403': errorResponse('FORBIDDEN') },
+        },
+      },
+      '/api/admin/users/{id}': {
+        parameters: [idParam('User id')],
+        patch: {
+          tags: ['Admin'],
+          summary: 'Admin: change a role or deactivate / activate an account',
+          description: 'A deactivated account cannot sign in and its open sessions stop working at once. Role changes also apply at once. Admins cannot change their own account.',
+          security: [{ sessionCookie: [] }],
+          requestBody: { required: true, content: jsonContent(body(updateUserSchema)) },
+          responses: {
+            '200': { description: 'The updated user', content: jsonContent({ type: 'object' }) },
+            '400': errorResponse('VALIDATION_ERROR'),
+            '401': authErrors['401'],
+            '403': errorResponse('FORBIDDEN'),
+            '404': errorResponse('USER_NOT_FOUND'),
+            '409': errorResponse('SELF_CHANGE'),
+          },
+        },
+      },
+      '/api/admin/low-stock': {
+        get: {
+          tags: ['Admin'],
+          summary: 'Admin: books at or below the low-stock threshold (env LOW_STOCK_THRESHOLD, default 5), emptiest first',
+          security: [{ sessionCookie: [] }],
+          responses: {
+            '200': { description: 'Low-stock books', content: jsonContent({ type: 'object', properties: { threshold: { type: 'integer' }, outOfStock: { type: 'integer' }, items: { type: 'array', items: { type: 'object', properties: { id: { type: 'integer' }, title: { type: 'string' }, author: { type: 'string' }, stockQuantity: { type: 'integer' } } } } } }) },
+            '401': authErrors['401'],
+            '403': errorResponse('FORBIDDEN'),
+          },
+        },
+      },
+      '/api/admin/sales': {
+        get: {
+          tags: ['Admin'],
+          summary: 'Admin: revenue and order figures for a period (default last 30 days, at most 366 days)',
+          description: 'Revenue counts orders placed in the period that were not cancelled or returned; refunded orders are shown separately. Dates are UTC.',
+          security: [{ sessionCookie: [] }],
+          parameters: [
+            { name: 'from', in: 'query', schema: { type: 'string', format: 'date' } },
+            { name: 'to', in: 'query', schema: { type: 'string', format: 'date' } },
+          ],
+          responses: {
+            '200': { description: 'Figures', content: jsonContent({ type: 'object', properties: { from: { type: 'string' }, to: { type: 'string' }, revenue: { type: 'number' }, orders: { type: 'integer' }, averageOrderValue: { type: 'number' }, refunded: { type: 'number' }, refundedOrders: { type: 'integer' }, byStatus: { type: 'object', additionalProperties: { type: 'integer' } }, topBooks: { type: 'array', items: { type: 'object' } }, daily: { type: 'array', items: { type: 'object', properties: { date: { type: 'string' }, orders: { type: 'integer' }, revenue: { type: 'number' } } } } } }) },
+            '400': errorResponse('VALIDATION_ERROR or INVALID_RANGE'),
+            '401': authErrors['401'],
+            '403': errorResponse('FORBIDDEN'),
+          },
+        },
+      },
+      '/api/admin/books/export': {
+        get: {
+          tags: ['Admin'],
+          summary: 'Admin: the whole catalog as a CSV download',
+          description: 'Columns: id, isbn, title, author, price, stock, categories (names separated by |), description. Cells that start with = + - @ are prefixed with an apostrophe so spreadsheets do not run them.',
+          security: [{ sessionCookie: [] }],
+          responses: { '200': { description: 'CSV file', content: { 'text/csv': { schema: { type: 'string' } } } }, '401': authErrors['401'], '403': errorResponse('FORBIDDEN') },
+        },
+      },
+      '/api/admin/books/import': {
+        post: {
+          tags: ['Admin'],
+          summary: 'Admin: add or update books from CSV text. Books are matched by ISBN.',
+          description: 'Send the CSV as the request body (Content-Type text/csv, at most 1 MB and 1000 books). Required columns: title, author, price, stock. Optional: isbn, categories (names separated by |, missing ones are created; an empty cell keeps the current categories of the book), description; id is ignored. The import is all or nothing: if any row is invalid the answer is 400 CSV_INVALID with `details.errors` (row number and message) and nothing changes. Use dryRun=true to check without saving.',
+          security: [{ sessionCookie: [] }],
+          parameters: [{ name: 'dryRun', in: 'query', schema: { type: 'boolean' } }],
+          requestBody: { required: true, content: { 'text/csv': { schema: { type: 'string' } } } },
+          responses: {
+            '200': { description: 'Result', content: jsonContent({ type: 'object', properties: { dryRun: { type: 'boolean' }, created: { type: 'integer' }, updated: { type: 'integer' } } }) },
+            '400': errorResponse('CSV_INVALID or CSV_TOO_LARGE'),
+            '401': authErrors['401'],
+            '403': errorResponse('FORBIDDEN'),
+          },
         },
       },
       '/api/admin/audit': {
@@ -960,6 +1049,12 @@ const OPERATION_IDS: Record<string, string> = {
   'post /api/wishlist': 'addToWishlist',
   'delete /api/wishlist/{bookId}': 'removeFromWishlist',
   'get /api/admin/audit': 'listAuditLog',
+  'get /api/admin/users': 'listUsers',
+  'patch /api/admin/users/{id}': 'updateUser',
+  'get /api/admin/low-stock': 'listLowStock',
+  'get /api/admin/sales': 'getSalesReport',
+  'get /api/admin/books/export': 'exportBooksCsv',
+  'post /api/admin/books/import': 'importBooksCsv',
   'get /api/addresses': 'listAddresses',
   'post /api/addresses': 'createAddress',
   'put /api/addresses/{id}': 'updateAddress',

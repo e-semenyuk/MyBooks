@@ -262,3 +262,23 @@ export const auditQuerySchema = z.object({
   page: z.coerce.number().int().min(1).catch(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(100).catch(25).default(25),
 })
+
+export const adminUserQuerySchema = z.object({
+  q: z.string().trim().max(100).optional(),
+  role: z.enum(['USER', 'ADMIN']).optional(),
+  active: z.enum(['true', 'false']).optional(),
+  page: z.coerce.number().int().min(1).catch(1).default(1),
+  pageSize: z.coerce.number().int().min(1).max(100).catch(25).default(25),
+})
+
+export const updateUserSchema = z
+  .object({
+    role: z.enum(['USER', 'ADMIN'], { error: 'Role must be USER or ADMIN' }).optional(),
+    active: z.boolean({ error: 'Active must be true or false' }).optional(),
+  })
+  .refine((value) => Object.keys(value).length > 0, 'Nothing to update')
+
+export const salesQuerySchema = z.object({
+  from: z.iso.date({ error: 'from must be a date like 2026-10-31' }).optional(),
+  to: z.iso.date({ error: 'to must be a date like 2026-10-31' }).optional(),
+})

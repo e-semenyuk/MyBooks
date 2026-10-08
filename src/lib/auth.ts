@@ -54,6 +54,11 @@ export const authOptions: NextAuthOptions = {
           })
         }
 
+        // Said only after the right password, so it does not reveal which emails have accounts
+        if (user.deactivatedAt) {
+          throw new Error('This account is deactivated. Contact the store.')
+        }
+
         return {
           id: user.id.toString(),
           email: user.email,

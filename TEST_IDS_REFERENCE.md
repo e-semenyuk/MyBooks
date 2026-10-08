@@ -475,6 +475,23 @@ Test IDs follow this pattern:
 | `admin-review-{id}`, `admin-review-status-{id}` | Row and status badge |
 | `admin-review-hide-{id}`, `admin-review-show-{id}`, `admin-review-delete-{id}` | Moderation buttons |
 
+### Admin: users, sales, audit log, catalog tools
+| Test ID | Element |
+|---|---|
+| `admin-users-tab`, `admin-dashboard-tab` (Sales), `admin-audit-tab` | Tabs |
+| `admin-user-filter-search`, `-role`, `-active`, `-apply`, `-clear` | User filters |
+| `admin-users-table`, `admin-users-total`, `admin-no-users` | Table, count, empty state |
+| `admin-user-{id}`, `admin-user-role-{id}`, `admin-user-status-{id}` | Row, role select, status badge |
+| `admin-user-deactivate-{id}`, `admin-user-activate-{id}` | Account buttons (not shown on your own row) |
+| `admin-sales-from`, `admin-sales-to`, `admin-sales-apply`, `admin-sales-reset` | Period controls |
+| `admin-sales-revenue`, `admin-sales-orders`, `admin-sales-average`, `admin-sales-refunded` | Figures |
+| `admin-sales-daily`, `admin-sales-day-{YYYY-MM-DD}`, `admin-sales-top`, `admin-sales-top-{bookId}`, `admin-sales-status`, `admin-sales-no-books` | Breakdowns |
+| `admin-audit-filter-action`, `-from`, `-to`, `-apply`, `-clear` | Audit filters |
+| `admin-audit-table`, `admin-audit-{id}`, `admin-no-audit` | Audit table, rows, empty state |
+| `admin-catalog-tools` | Container below the book list |
+| `admin-low-stock`, `admin-low-stock-count`, `admin-low-stock-item-{id}`, `admin-low-stock-toggle`, `admin-low-stock-ok` | Low-stock panel |
+| `admin-csv`, `admin-csv-export-link`, `admin-csv-file-input`, `admin-csv-check-button`, `admin-csv-import-button`, `admin-csv-summary`, `admin-csv-errors` | CSV import and export |
+
 ## Testing Tips
 
 1. **Use specific selectors**: Prefer `data-testid={`cart-item-${id}`}` over class-based selectors

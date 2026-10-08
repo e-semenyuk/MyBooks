@@ -8,3 +8,9 @@ export function emailVerificationRequired(env: Record<string, string | undefined
   if (flag === 'false') return false
   return Boolean(env.SMTP_HOST)
 }
+
+// Books with this many copies or fewer count as low on stock (default 5).
+export function lowStockThreshold(env: Record<string, string | undefined> = process.env): number {
+  const value = Number(env.LOW_STOCK_THRESHOLD)
+  return Number.isInteger(value) && value >= 0 ? value : 5
+}

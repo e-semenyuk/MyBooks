@@ -17,7 +17,10 @@ export async function getOptionalUser(): Promise<SessionUser | null> {
   const user = session.user as any
   const id = Number(user.id)
   if (!Number.isInteger(id)) return null
-  return { id, email: user.email, name: user.name, role: user.role }
+  // The token can be days old: role changes and deactivation apply right away
+  const row = await prisma.user.findUnique({ where: { id }, select: { role: true, deactivatedAt: true } })
+  if (!row || row.deactivatedAt) return null
+  return { id, email: user.email, name: user.name, role: row.role }
 }
 
 export async function requireUser(): Promise<SessionUser> {
