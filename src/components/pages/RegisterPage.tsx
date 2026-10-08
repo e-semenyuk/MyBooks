@@ -23,8 +23,8 @@ export default function RegisterPage({ showToast, onRegisterSuccess, onSwitchToL
       return
     }
 
-    if (password.length < 6) {
-      showToast('Password must be at least 6 characters', 'error')
+    if (password.length < 8 || !/[A-Za-z]/.test(password) || !/[0-9]/.test(password)) {
+      showToast('Password must be at least 8 characters with a letter and a digit', 'error')
       return
     }
 
@@ -53,79 +53,85 @@ export default function RegisterPage({ showToast, onRegisterSuccess, onSwitchToL
   }
 
   return (
-    <div data-testid="register-page" className="min-h-[calc(100vh-200px)] flex items-center justify-center py-12 px-4">
-      <div className="max-w-md w-full">
-        <div className="card-gradient border-2 border-primary-200 animate-fade-in">
-          <div className="text-center mb-8">
-            <div className="text-6xl mb-4">📝</div>
-            <h2 className="text-3xl font-bold text-gray-900 mb-2">Create Account</h2>
-            <p className="text-gray-600">Join our bookstore community</p>
-          </div>
+    <div data-testid="register-page" className="flex justify-center py-8 animate-fade-in">
+      <div className="w-full max-w-md">
+        <div className="mb-8">
+          <p className="section-label mb-3">Account</p>
+          <h2 className="page-title mb-2">Create Account</h2>
+          <p className="text-stone-600">Track your orders and check out faster.</p>
+        </div>
 
+        <div className="rounded-lg border border-stone-200 bg-white p-8">
           <form data-testid="register-form" onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label htmlFor="name" className="block text-sm font-semibold text-gray-700 mb-2">
+              <label htmlFor="name" className="label">
                 Full Name
               </label>
               <input
                 data-testid="register-name-input"
                 id="name"
                 type="text"
+                autoComplete="name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
                 className="input"
-                placeholder="John Doe"
+                placeholder="Jane Doe"
               />
             </div>
 
             <div>
-              <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-2">
+              <label htmlFor="email" className="label">
                 Email Address
               </label>
               <input
                 data-testid="register-email-input"
                 id="email"
                 type="email"
+                autoComplete="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 className="input"
-                placeholder="john@example.com"
+                placeholder="you@example.com"
               />
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-semibold text-gray-700 mb-2">
+              <label htmlFor="password" className="label">
                 Password
               </label>
               <input
                 data-testid="register-password-input"
                 id="password"
                 type="password"
+                autoComplete="new-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                minLength={6}
+                minLength={8}
+                aria-describedby="password-hint"
                 className="input"
-                placeholder="••••••••"
               />
+              <p id="password-hint" className="mt-1.5 text-xs text-stone-500">
+                At least 8 characters, with a letter and a digit.
+              </p>
             </div>
 
             <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-semibold text-gray-700 mb-2">
+              <label htmlFor="confirmPassword" className="label">
                 Confirm Password
               </label>
               <input
                 data-testid="register-confirm-password-input"
                 id="confirmPassword"
                 type="password"
+                autoComplete="new-password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
-                minLength={6}
+                minLength={8}
                 className="input"
-                placeholder="••••••••"
               />
             </div>
 
@@ -135,37 +141,22 @@ export default function RegisterPage({ showToast, onRegisterSuccess, onSwitchToL
               disabled={loading}
               className="btn btn-primary w-full"
             >
-              {loading ? (
-                <span className="flex items-center justify-center gap-2">
-                  <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white"></div>
-                  Creating account...
-                </span>
-              ) : (
-                <span className="flex items-center justify-center gap-2">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-                  </svg>
-                  Create Account
-                </span>
-              )}
+              {loading ? 'Creating account...' : 'Create Account'}
             </button>
           </form>
-
-          <div className="mt-6 text-center">
-            <p className="text-sm text-gray-600">
-              Already have an account?{' '}
-              <button
-                data-testid="switch-to-login-button"
-                onClick={onSwitchToLogin}
-                className="font-semibold text-primary-600 hover:text-primary-700 transition-colors"
-              >
-                Sign in here
-              </button>
-            </p>
-          </div>
         </div>
+
+        <p className="mt-6 text-sm text-stone-600">
+          Already have an account?{' '}
+          <button
+            data-testid="switch-to-login-button"
+            onClick={onSwitchToLogin}
+            className="font-medium text-brass-700 underline underline-offset-4 transition-colors hover:text-ink-900"
+          >
+            Sign in here
+          </button>
+        </p>
       </div>
     </div>
   )
 }
-

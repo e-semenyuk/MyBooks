@@ -66,13 +66,17 @@ export default function CheckoutPage({ showToast, updateCartCount, navigateTo }:
   }
 
   return (
-    <div data-testid="checkout-page">
-      <h2 className="text-3xl font-bold mb-6 text-gray-900">Checkout</h2>
+    <div data-testid="checkout-page" className="animate-fade-in">
+      <div className="mb-10 border-b border-stone-200 pb-8">
+        <p className="section-label mb-3">Final step</p>
+        <h2 className="page-title mb-2">Checkout</h2>
+        <p className="text-stone-600">Enter the delivery details for your order.</p>
+      </div>
 
-      <div className="card max-w-2xl mx-auto">
-        <form data-testid="checkout-form" onSubmit={handleSubmit}>
-          <div className="mb-4">
-            <label htmlFor="customerName" className="block text-sm font-medium text-gray-700 mb-2">
+      <div className="max-w-2xl rounded-lg border border-stone-200 bg-white p-8">
+        <form data-testid="checkout-form" onSubmit={handleSubmit} className="space-y-6">
+          <div>
+            <label htmlFor="customerName" className="label">
               Full Name
             </label>
             <input
@@ -80,6 +84,7 @@ export default function CheckoutPage({ showToast, updateCartCount, navigateTo }:
               type="text"
               id="customerName"
               name="customerName"
+              autoComplete="name"
               value={formData.customerName}
               onChange={handleChange}
               required
@@ -87,8 +92,8 @@ export default function CheckoutPage({ showToast, updateCartCount, navigateTo }:
             />
           </div>
 
-          <div className="mb-4">
-            <label htmlFor="customerEmail" className="block text-sm font-medium text-gray-700 mb-2">
+          <div>
+            <label htmlFor="customerEmail" className="label">
               Email
             </label>
             <input
@@ -96,6 +101,7 @@ export default function CheckoutPage({ showToast, updateCartCount, navigateTo }:
               type="email"
               id="customerEmail"
               name="customerEmail"
+              autoComplete="email"
               value={formData.customerEmail}
               onChange={handleChange}
               required
@@ -103,14 +109,15 @@ export default function CheckoutPage({ showToast, updateCartCount, navigateTo }:
             />
           </div>
 
-          <div className="mb-6">
-            <label htmlFor="customerAddress" className="block text-sm font-medium text-gray-700 mb-2">
+          <div>
+            <label htmlFor="customerAddress" className="label">
               Address
             </label>
             <textarea
               data-testid="checkout-address-input"
               id="customerAddress"
               name="customerAddress"
+              autoComplete="street-address"
               value={formData.customerAddress}
               onChange={handleChange}
               required
@@ -119,7 +126,7 @@ export default function CheckoutPage({ showToast, updateCartCount, navigateTo }:
             />
           </div>
 
-          <div className="flex gap-4">
+          <div className="flex flex-col-reverse gap-3 border-t border-stone-200 pt-6 sm:flex-row">
             <button
               data-testid="back-to-cart-button"
               type="button"
@@ -142,4 +149,3 @@ export default function CheckoutPage({ showToast, updateCartCount, navigateTo }:
     </div>
   )
 }
-
