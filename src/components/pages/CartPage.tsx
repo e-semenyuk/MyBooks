@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Book, CartItem } from '@/types'
 import BookCover from '@/components/BookCover'
-import { CartIcon, TrashIcon } from '@/components/icons'
+import { ArrowRightIcon, TrashIcon } from '@/components/icons'
 
 interface CartPageProps {
   showToast: (message: string, type: 'success' | 'error') => void
@@ -106,7 +106,7 @@ export default function CartPage({ showToast, updateCartCount, navigateTo }: Car
   if (loading) {
     return (
       <div data-testid="cart-loading" aria-busy="true" className="space-y-4">
-        <div className="skeleton h-10 w-56" />
+        <div className="skeleton h-14 w-72" />
         <div className="skeleton h-28 w-full" />
         <div className="skeleton h-28 w-full" />
       </div>
@@ -117,10 +117,10 @@ export default function CartPage({ showToast, updateCartCount, navigateTo }: Car
 
   return (
     <div data-testid="cart-page" className="animate-fade-in">
-      <div className="mb-10 border-b border-stone-200 pb-8">
-        <p className="section-label mb-3">Your order</p>
-        <h2 className="page-title mb-2">Shopping Cart</h2>
-        <p className="text-stone-600">
+      <div className="mb-12">
+        <p className="section-label mb-6">02 / Cart</p>
+        <h2 className="page-title mb-4">Shopping Cart</h2>
+        <p className="text-lg text-ink-600">
           {cartItems.length === 0
             ? 'Your cart is empty.'
             : `${cartItems.length} ${cartItems.length === 1 ? 'title' : 'titles'}, ${itemCount} ${itemCount === 1 ? 'copy' : 'copies'}`}
@@ -129,9 +129,9 @@ export default function CartPage({ showToast, updateCartCount, navigateTo }: Car
 
       {cartItems.length === 0 ? (
         <div data-testid="empty-cart-message" className="empty-state">
-          <CartIcon className="mx-auto mb-4 h-8 w-8 text-stone-500" />
-          <h3 className="panel-title mb-2">Your cart is empty</h3>
-          <p className="mb-6 text-sm text-stone-600">
+          <p className="section-label mb-4">0 items</p>
+          <h3 className="panel-title mb-3">Your cart is empty</h3>
+          <p className="mb-8 max-w-md text-ink-600">
             Browse the catalog and add the books you would like to order.
           </p>
           <button
@@ -140,34 +140,39 @@ export default function CartPage({ showToast, updateCartCount, navigateTo }: Car
             className="btn btn-primary"
           >
             Browse Books
+            <ArrowRightIcon className="h-5 w-5" />
           </button>
         </div>
       ) : (
-        <div className="grid items-start gap-10 lg:grid-cols-3">
-          <div
-            data-testid="cart-items-list"
-            className="divide-y divide-stone-200 rounded-lg border border-stone-200 bg-white lg:col-span-2"
-          >
-            {cartItems.map((item) => (
-              <div key={item.id} data-testid={`cart-item-${item.id}`} className="flex gap-5 p-5">
-                <BookCover id={item.book.id} title={item.book.title} size="sm" />
+        <div className="grid items-start gap-12 lg:grid-cols-3">
+          <div data-testid="cart-items-list" className="border-t-2 border-ink-950 lg:col-span-2">
+            {cartItems.map((item, index) => (
+              <div
+                key={item.id}
+                data-testid={`cart-item-${item.id}`}
+                className="grid grid-cols-[auto_auto_1fr] gap-x-5 border-b border-mist-200 py-6 sm:grid-cols-[2rem_auto_1fr]"
+              >
+                <span className="hidden font-mono text-xs text-ink-500 sm:block">
+                  {String(index + 1).padStart(2, '0')}
+                </span>
+                <BookCover id={item.book.id} title={item.book.title} size="sm" className="col-start-1 sm:col-start-2" />
 
-                <div className="min-w-0 flex-1">
+                <div className="col-start-2 min-w-0 sm:col-start-3">
                   <div className="flex items-start justify-between gap-4">
                     <div className="min-w-0">
-                      <h3 className="line-clamp-2 font-display text-lg font-semibold leading-snug text-ink-900">
+                      <h3 className="line-clamp-2 font-display text-xl font-bold leading-tight tracking-tight text-ink-950">
                         {item.book.title}
                       </h3>
-                      <p className="text-sm text-stone-600">{item.book.author}</p>
+                      <p className="text-sm text-ink-600">{item.book.author}</p>
                     </div>
-                    <p className="num shrink-0 text-sm text-stone-600">
+                    <p className="num shrink-0 font-mono text-xs text-ink-500">
                       ${item.book.price.toFixed(2)} each
                     </p>
                   </div>
 
-                  <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-3">
-                    <div className="flex items-center gap-2">
-                      <label htmlFor={`qty-${item.id}`} className="text-sm text-stone-600">
+                  <div className="mt-5 flex flex-wrap items-end gap-x-6 gap-y-3">
+                    <div>
+                      <label htmlFor={`qty-${item.id}`} className="label">
                         Quantity
                       </label>
                       <input
@@ -178,13 +183,13 @@ export default function CartPage({ showToast, updateCartCount, navigateTo }: Car
                         onChange={(e) => handleUpdateQuantity(item.id, parseInt(e.target.value))}
                         min="1"
                         max={item.book.stockQuantity}
-                        className="input num w-20 py-1.5 text-center"
+                        className="input num w-20 py-2 text-center"
                       />
                     </div>
 
-                    <div data-testid={`cart-item-subtotal-${item.id}`} className="num text-sm text-stone-600">
+                    <div data-testid={`cart-item-subtotal-${item.id}`} className="num text-sm text-ink-600">
                       Subtotal:{' '}
-                      <span className="font-semibold text-ink-900">
+                      <span className="font-display text-xl font-extrabold text-ink-950">
                         ${(item.book.price * item.quantity).toFixed(2)}
                       </span>
                     </div>
@@ -203,44 +208,45 @@ export default function CartPage({ showToast, updateCartCount, navigateTo }: Car
             ))}
           </div>
 
-          <aside
-            data-testid="order-summary"
-            className="rounded-lg border border-stone-200 bg-white p-6 lg:sticky lg:top-24"
-          >
-            <h3 className="panel-title mb-6">Order Summary</h3>
+          <aside data-testid="order-summary" className="border-2 border-ink-950 lg:sticky lg:top-24">
+            <div className="bg-ink-950 px-6 py-4">
+              <h3 className="font-display text-xl font-bold tracking-tight text-white">Order Summary</h3>
+            </div>
+            <div className="p-6">
+              <dl className="mb-8 space-y-3 text-sm">
+                <div className="flex justify-between">
+                  <dt className="text-ink-600">Items ({itemCount})</dt>
+                  <dd className="num font-semibold text-ink-950">${total.toFixed(2)}</dd>
+                </div>
+                <div className="flex justify-between">
+                  <dt className="text-ink-600">Shipping</dt>
+                  <dd className="font-semibold text-ink-950">Free</dd>
+                </div>
+                <div className="flex items-baseline justify-between border-t-2 border-ink-950 pt-5">
+                  <dt className="font-semibold text-ink-950">Total</dt>
+                  <dd data-testid="cart-total" className="num font-display text-5xl font-extrabold tracking-tight text-ink-950">
+                    ${total.toFixed(2)}
+                  </dd>
+                </div>
+              </dl>
 
-            <dl className="mb-6 space-y-3 text-sm">
-              <div className="flex justify-between">
-                <dt className="text-stone-600">Items ({itemCount})</dt>
-                <dd className="num font-medium text-ink-900">${total.toFixed(2)}</dd>
-              </div>
-              <div className="flex justify-between">
-                <dt className="text-stone-600">Shipping</dt>
-                <dd className="font-medium text-ink-900">Free</dd>
-              </div>
-              <div className="flex items-baseline justify-between border-t border-stone-200 pt-4">
-                <dt className="font-medium text-ink-900">Total</dt>
-                <dd data-testid="cart-total" className="num font-display text-3xl font-semibold text-ink-900">
-                  ${total.toFixed(2)}
-                </dd>
-              </div>
-            </dl>
+              <button
+                data-testid="proceed-to-checkout-button"
+                onClick={handleCheckout}
+                className="btn btn-primary w-full justify-between"
+              >
+                Proceed to Checkout
+                <ArrowRightIcon className="h-5 w-5" />
+              </button>
 
-            <button
-              data-testid="proceed-to-checkout-button"
-              onClick={handleCheckout}
-              className="btn btn-primary w-full"
-            >
-              Proceed to Checkout
-            </button>
-
-            <button
-              data-testid="continue-shopping-button"
-              onClick={() => navigateTo('home')}
-              className="btn btn-secondary mt-3 w-full"
-            >
-              Continue Shopping
-            </button>
+              <button
+                data-testid="continue-shopping-button"
+                onClick={() => navigateTo('home')}
+                className="btn btn-secondary mt-3 w-full"
+              >
+                Continue Shopping
+              </button>
+            </div>
           </aside>
         </div>
       )}

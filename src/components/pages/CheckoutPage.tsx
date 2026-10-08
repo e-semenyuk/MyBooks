@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
+import { ArrowRightIcon } from '@/components/icons'
 
 interface CheckoutPageProps {
   showToast: (message: string, type: 'success' | 'error') => void
@@ -67,13 +68,13 @@ export default function CheckoutPage({ showToast, updateCartCount, navigateTo }:
 
   return (
     <div data-testid="checkout-page" className="animate-fade-in">
-      <div className="mb-10 border-b border-stone-200 pb-8">
-        <p className="section-label mb-3">Final step</p>
-        <h2 className="page-title mb-2">Checkout</h2>
-        <p className="text-stone-600">Enter the delivery details for your order.</p>
+      <div className="mb-12">
+        <p className="section-label mb-6">03 / Checkout</p>
+        <h2 className="page-title mb-4">Checkout</h2>
+        <p className="text-lg text-ink-600">Enter the delivery details for your order.</p>
       </div>
 
-      <div className="max-w-2xl rounded-lg border border-stone-200 bg-white p-8">
+      <div className="max-w-2xl border-t-2 border-ink-950 pt-8">
         <form data-testid="checkout-form" onSubmit={handleSubmit} className="space-y-6">
           <div>
             <label htmlFor="customerName" className="label">
@@ -126,7 +127,7 @@ export default function CheckoutPage({ showToast, updateCartCount, navigateTo }:
             />
           </div>
 
-          <div className="flex flex-col-reverse gap-3 border-t border-stone-200 pt-6 sm:flex-row">
+          <div className="flex flex-col-reverse gap-3 pt-4 sm:flex-row">
             <button
               data-testid="back-to-cart-button"
               type="button"
@@ -139,9 +140,10 @@ export default function CheckoutPage({ showToast, updateCartCount, navigateTo }:
               data-testid="place-order-button"
               type="submit"
               disabled={submitting}
-              className="btn btn-primary flex-1"
+              className="btn btn-primary flex-1 justify-between"
             >
               {submitting ? 'Placing Order...' : 'Place Order'}
+              {!submitting && <ArrowRightIcon className="h-5 w-5" />}
             </button>
           </div>
         </form>

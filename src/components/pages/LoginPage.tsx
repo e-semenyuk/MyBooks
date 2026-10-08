@@ -2,6 +2,8 @@
 
 import { useState } from 'react'
 import { signIn } from 'next-auth/react'
+import AuthLayout from '@/components/AuthLayout'
+import { ArrowRightIcon } from '@/components/icons'
 
 interface LoginPageProps {
   showToast: (message: string, type: 'success' | 'error') => void
@@ -45,71 +47,65 @@ export default function LoginPage({ showToast, onLoginSuccess, onSwitchToRegiste
   }
 
   return (
-    <div data-testid="login-page" className="flex justify-center py-8 animate-fade-in">
-      <div className="w-full max-w-md">
-        <div className="mb-8">
-          <p className="section-label mb-3">Account</p>
-          <h2 className="page-title mb-2">Sign in</h2>
-          <p className="text-stone-600">Welcome back. Enter your details to continue.</p>
+    <AuthLayout testId="login-page" label="04 / Account" statement="Sign in to continue.">
+      <h2 className="font-display text-3xl font-bold tracking-tight text-ink-950">Sign in</h2>
+      <p className="mb-8 mt-2 text-ink-600">Welcome back. Enter your details to continue.</p>
+
+      <form data-testid="login-form" onSubmit={handleSubmit} className="space-y-5">
+        <div>
+          <label htmlFor="email" className="label">
+            Email Address
+          </label>
+          <input
+            data-testid="login-email-input"
+            id="email"
+            type="email"
+            autoComplete="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            className="input"
+            placeholder="you@example.com"
+          />
         </div>
 
-        <div className="rounded-lg border border-stone-200 bg-white p-8">
-          <form data-testid="login-form" onSubmit={handleSubmit} className="space-y-5">
-            <div>
-              <label htmlFor="email" className="label">
-                Email Address
-              </label>
-              <input
-                data-testid="login-email-input"
-                id="email"
-                type="email"
-                autoComplete="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="input"
-                placeholder="you@example.com"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="password" className="label">
-                Password
-              </label>
-              <input
-                data-testid="login-password-input"
-                id="password"
-                type="password"
-                autoComplete="current-password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                className="input"
-              />
-            </div>
-
-            <button
-              data-testid="login-submit-button"
-              type="submit"
-              disabled={loading}
-              className="btn btn-primary w-full"
-            >
-              {loading ? 'Signing in...' : 'Sign In'}
-            </button>
-          </form>
+        <div>
+          <label htmlFor="password" className="label">
+            Password
+          </label>
+          <input
+            data-testid="login-password-input"
+            id="password"
+            type="password"
+            autoComplete="current-password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            className="input"
+          />
         </div>
 
-        <p className="mt-6 text-sm text-stone-600">
-          Don&apos;t have an account?{' '}
-          <button
-            data-testid="switch-to-register-button"
-            onClick={onSwitchToRegister}
-            className="font-medium text-brass-700 underline underline-offset-4 transition-colors hover:text-ink-900"
-          >
-            Register here
-          </button>
-        </p>
-      </div>
-    </div>
+        <button
+          data-testid="login-submit-button"
+          type="submit"
+          disabled={loading}
+          className="btn btn-primary w-full justify-between"
+        >
+          {loading ? 'Signing in...' : 'Sign In'}
+          {!loading && <ArrowRightIcon className="h-5 w-5" />}
+        </button>
+      </form>
+
+      <p className="mt-8 text-sm text-ink-600">
+        Don&apos;t have an account?{' '}
+        <button
+          data-testid="switch-to-register-button"
+          onClick={onSwitchToRegister}
+          className="font-semibold text-cobalt-500 underline underline-offset-4 transition-colors hover:text-cobalt-700"
+        >
+          Register here
+        </button>
+      </p>
+    </AuthLayout>
   )
 }
