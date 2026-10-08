@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { BookService } from '@/lib/services/bookService'
 import { UpdateBookRequest } from '@/types'
+import { requireAdmin } from '@/lib/auth-helpers'
 
 // GET /api/books/:id - Get a book by ID
 export async function GET(
@@ -42,6 +43,9 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { error: authError } = await requireAdmin()
+  if (authError) return authError
+
   try {
     const { id } = await params
     const bookId = parseInt(id)
@@ -71,6 +75,9 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { error: authError } = await requireAdmin()
+  if (authError) return authError
+
   try {
     const { id } = await params
     const bookId = parseInt(id)

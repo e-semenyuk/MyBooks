@@ -1,12 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { OrderService } from '@/lib/services/orderService'
-import { requireAdmin } from '@/lib/auth-helpers'
+import { requireAdmin, requireAuth } from '@/lib/auth-helpers'
 
 // GET /api/orders/:id - Get an order by ID
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { error: authError, session } = await requireAuth()
+  if (authError) return authError
+
   try {
     const { id } = await params
     const orderId = parseInt(id)
@@ -19,8 +22,11 @@ export async function GET(
     }
 
     const order = await OrderService.getOrderById(orderId)
+    const user = session!.user as any
+    const isOwner = order?.userId != null && String(order.userId) === String(user.id)
 
-    if (!order) {
+    // Return 404 for foreign orders so order IDs cannot be probed
+    if (!order || (user.role !== 'ADMIN' && !isOwner)) {
       return NextResponse.json(
         { error: 'Order not found' },
         { status: 404 }

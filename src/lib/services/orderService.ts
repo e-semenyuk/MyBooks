@@ -69,13 +69,15 @@ export class OrderService {
           },
         })
 
-        // Update book stock
-        await tx.book.update({
-          where: { id: cartItem.bookId },
-          data: {
-            stockQuantity: book.stockQuantity - cartItem.quantity,
-          },
+        // Atomic conditional decrement: fails if stock was taken by a concurrent order
+        const updated = await tx.book.updateMany({
+          where: { id: cartItem.bookId, stockQuantity: { gte: cartItem.quantity } },
+          data: { stockQuantity: { decrement: cartItem.quantity } },
         })
+
+        if (updated.count === 0) {
+          throw new Error(`Insufficient stock for book: ${book.title}`)
+        }
       }
 
       return newOrder

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { BookService } from '@/lib/services/bookService'
 import { CreateBookRequest } from '@/types'
+import { requireAdmin } from '@/lib/auth-helpers'
 
 // GET /api/books - Get all books or search books
 export async function GET(request: NextRequest) {
@@ -24,6 +25,9 @@ export async function GET(request: NextRequest) {
 
 // POST /api/books - Create a new book
 export async function POST(request: NextRequest) {
+  const { error: authError } = await requireAdmin()
+  if (authError) return authError
+
   try {
     const body: CreateBookRequest = await request.json()
 

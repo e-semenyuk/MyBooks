@@ -55,21 +55,26 @@ export class CartService {
     }
   }
 
-  static async updateCartItem(itemId: number, quantity: number): Promise<CartItem | null> {
-    try {
-      return await prisma.cartItem.update({
-        where: { id: itemId },
-        data: { quantity },
-      })
-    } catch (error) {
-      return null
-    }
+  static async updateCartItem(
+    sessionId: string,
+    itemId: number,
+    quantity: number
+  ): Promise<CartItem | null> {
+    const result = await prisma.cartItem.updateMany({
+      where: { id: itemId, sessionId },
+      data: { quantity },
+    })
+
+    if (result.count === 0) return null
+
+    return await prisma.cartItem.findUnique({ where: { id: itemId } })
   }
 
-  static async removeCartItem(itemId: number): Promise<void> {
-    await prisma.cartItem.delete({
-      where: { id: itemId },
+  static async removeCartItem(sessionId: string, itemId: number): Promise<boolean> {
+    const result = await prisma.cartItem.deleteMany({
+      where: { id: itemId, sessionId },
     })
+    return result.count > 0
   }
 
   static async clearCart(sessionId: string): Promise<void> {

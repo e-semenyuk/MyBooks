@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { CartService } from '@/lib/services/cartService'
 import { UpdateCartItemRequest } from '@/types'
+import { getOrCreateSessionId } from '@/lib/session'
 
 // PUT /api/cart/:id - Update cart item quantity
 export async function PUT(
@@ -8,6 +9,7 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const sessionId = await getOrCreateSessionId()
     const { id } = await params
     const itemId = parseInt(id)
 
@@ -27,7 +29,7 @@ export async function PUT(
       )
     }
 
-    const cartItem = await CartService.updateCartItem(itemId, body.quantity)
+    const cartItem = await CartService.updateCartItem(sessionId, itemId, body.quantity)
 
     if (!cartItem) {
       return NextResponse.json(
@@ -52,6 +54,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const sessionId = await getOrCreateSessionId()
     const { id } = await params
     const itemId = parseInt(id)
 
@@ -62,7 +65,14 @@ export async function DELETE(
       )
     }
 
-    await CartService.removeCartItem(itemId)
+    const removed = await CartService.removeCartItem(sessionId, itemId)
+
+    if (!removed) {
+      return NextResponse.json(
+        { error: 'Cart item not found' },
+        { status: 404 }
+      )
+    }
 
     return NextResponse.json({ message: 'Item removed from cart' })
   } catch (error) {
