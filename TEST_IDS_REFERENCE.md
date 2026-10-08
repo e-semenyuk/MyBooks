@@ -101,7 +101,7 @@ Test cards (the payment provider is a mock; no money moves): `4242424242424242` 
 
 Seeded promo codes: `WELCOME10` (10% off), `SAVE5` ($5 off), `HALFOFF` (50% off), `ONCEONLY` (20% off, one use), `EXPIRED10` (expired), `DISABLED5` (inactive).
 
-Order detail also shows `order-detail-payment` and `order-detail-payment-status` ("Paid" or "Refunded"), the cancel controls `order-cancel-section`, `order-cancel-button`, `order-cancel-dialog`, `order-cancel-confirm-button`, `order-cancel-keep-button`, `order-cancel-error` (a cancel is possible while the status is PENDING or CONFIRMED; the failure text is "Unable to cancel order. Try again later."), `order-detail-breakdown`, `order-detail-subtotal`, `order-detail-discount`, `order-detail-shipping` and `order-detail-tax`.
+Order detail also shows `order-detail-payment` and `order-detail-payment-status` ("Paid" or "Refunded"), `order-detail-invoice-link` (downloads `INV-<order number>.pdf` from `GET /api/orders/{id}/invoice`; only for orders that have a payment), the cancel controls `order-cancel-section`, `order-cancel-button`, `order-cancel-dialog`, `order-cancel-confirm-button`, `order-cancel-keep-button`, `order-cancel-error` (a cancel is possible while the status is PENDING or CONFIRMED; the failure text is "Unable to cancel order. Try again later."), `order-detail-breakdown`, `order-detail-subtotal`, `order-detail-discount`, `order-detail-shipping` and `order-detail-tax`.
 
 ## LoginPage
 

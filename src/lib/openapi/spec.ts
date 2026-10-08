@@ -424,6 +424,22 @@ function buildDocument(): Json {
           },
         },
       },
+      '/api/orders/{id}/invoice': {
+        parameters: [idParam('Order id')],
+        get: {
+          tags: ['Orders'],
+          summary: 'The invoice as a PDF (download). Owner or admin; another user\'s order answers 404.',
+          description: 'Available for orders that were paid. A refunded order still has its invoice, marked Refunded.',
+          security: [{ sessionCookie: [] }],
+          responses: {
+            '200': { description: 'The PDF', content: { 'application/pdf': { schema: { type: 'string', format: 'binary' } } } },
+            '400': standardErrors['400'],
+            '401': authErrors['401'],
+            '404': errorResponse('ORDER_NOT_FOUND'),
+            '409': errorResponse('NOT_PAID (no payment was taken for this order)'),
+          },
+        },
+      },
       '/api/register': {
         post: {
           tags: ['Accounts'],
@@ -690,6 +706,7 @@ const OPERATION_IDS: Record<string, string> = {
   'get /api/orders': 'listOrders',
   'post /api/orders': 'createOrder',
   'post /api/orders/{id}/cancel': 'cancelOrder',
+  'get /api/orders/{id}/invoice': 'getInvoice',
   'post /api/checkout/quote': 'quoteCheckout',
   'get /api/shipping-methods': 'listShippingMethods',
   'get /api/orders/{id}': 'getOrder',

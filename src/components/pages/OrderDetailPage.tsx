@@ -221,6 +221,14 @@ export default function OrderDetailPage({ orderId, showToast }: OrderDetailPageP
                   {order.payment.cardBrand} ending {order.payment.cardLast4}
                 </p>
               )}
+              <a
+                data-testid="order-detail-invoice-link"
+                href={`/api/orders/${order.id}/invoice`}
+                download
+                className="mt-4 inline-flex items-center gap-2 font-semibold text-cobalt-500 underline underline-offset-4 transition-colors hover:text-cobalt-700"
+              >
+                Download invoice (PDF)
+              </a>
             </div>
           </aside>
         )}
