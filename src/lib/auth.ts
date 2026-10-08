@@ -2,6 +2,7 @@ import { NextAuthOptions } from 'next-auth'
 import CredentialsProvider from 'next-auth/providers/credentials'
 import bcrypt from 'bcryptjs'
 import { prisma } from './prisma'
+import { clientIp, loginFailureLimiter, rateLimitingEnabled } from './rateLimit'
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -11,9 +12,18 @@ export const authOptions: NextAuthOptions = {
         email: { label: 'Email', type: 'email' },
         password: { label: 'Password', type: 'password' },
       },
-      async authorize(credentials) {
+      async authorize(credentials, req) {
         if (!credentials?.email || !credentials?.password) {
           throw new Error('Email and password are required')
+        }
+
+        // Failed attempts are counted per address and email; successes are not
+        const limiterKey = `${clientIp((req?.headers ?? {}) as Record<string, string>)}|${credentials.email.trim().toLowerCase()}`
+        if (rateLimitingEnabled()) {
+          const retryAfter = loginFailureLimiter().retryAfterSeconds(limiterKey)
+          if (retryAfter > 0) {
+            throw new Error(`Too many failed attempts. Try again in ${Math.ceil(retryAfter / 60)} minute(s).`)
+          }
         }
 
         // Emails are stored lowercase for new accounts; older rows may differ in case
@@ -22,6 +32,7 @@ export const authOptions: NextAuthOptions = {
         })
 
         if (!user) {
+          loginFailureLimiter().record(limiterKey)
           throw new Error('Invalid email or password')
         }
 
@@ -31,8 +42,11 @@ export const authOptions: NextAuthOptions = {
         )
 
         if (!isPasswordValid) {
+          loginFailureLimiter().record(limiterKey)
           throw new Error('Invalid email or password')
         }
+
+        loginFailureLimiter().reset(limiterKey)
 
         return {
           id: user.id.toString(),
