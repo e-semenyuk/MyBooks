@@ -4,7 +4,7 @@ import { useSession, signOut } from 'next-auth/react'
 import { usePathname } from 'next/navigation'
 import { useNavigateTo } from '@/components/providers/AppProviders'
 import { pageFromPath, PageName } from '@/lib/routes'
-import { CartIcon, LoginIcon, LogoutIcon, UserIcon } from '@/components/icons'
+import { CartIcon, HeartIcon, LoginIcon, LogoutIcon, UserIcon } from '@/components/icons'
 
 interface NavigationProps {
   cartCount: number
@@ -83,6 +83,15 @@ export default function Navigation({ cartCount }: NavigationProps) {
             </div>
           ) : session ? (
             <>
+              <button
+                data-testid="nav-wishlist-button"
+                onClick={() => onNavigate('wishlist')}
+                aria-label="Wishlist"
+                className={link('wishlist')}
+              >
+                <HeartIcon className="h-5 w-5" />
+                <span className="hidden sm:inline">Wishlist</span>
+              </button>
               <button
                 data-testid="nav-profile-button"
                 onClick={() => onNavigate('profile')}

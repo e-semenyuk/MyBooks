@@ -26,6 +26,7 @@ import {
 import { paymentProvider } from '@/lib/payments'
 import { cardBrand, normalizeCardNumber } from '@/lib/payments/card'
 import { paymentFailed } from '@/lib/payments/mockProvider'
+import { AuditService } from '@/lib/services/auditService'
 import { notifyOrderEvent } from '@/lib/notifications/service'
 import { CartService } from './cartService'
 import { BookService } from './bookService'
@@ -370,6 +371,7 @@ export class OrderService {
       })
       return mapOrder(updated)
     })
+    await AuditService.record(actorId, 'ORDER_STATUS_CHANGED', 'order', id, `Order #${id} to ${status}`, { to: status, ...(note ? { note } : {}) })
     if (status === 'SHIPPED') await notifyOrderEvent(id, 'ORDER_SHIPPED')
     if (status === 'CANCELLED') await notifyOrderEvent(id, 'ORDER_CANCELLED')
     return result

@@ -1,5 +1,6 @@
 import type { Book as BookRow } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
+import { ApiError } from '@/lib/api/errors'
 import { mapBook } from '@/lib/mappers'
 import { toCents } from '@/lib/money'
 import { Book, CreateBookRequest, PagedBooks, UpdateBookRequest } from '@/types'
@@ -125,6 +126,32 @@ export class BookService {
     return rows.map(mapBook)
   }
 
+  // Books that share a category or the author with this one, closest first.
+  // Books in stock come before sold-out ones. Never includes the book itself.
+  static async getRelatedBooks(id: number, limit = 4): Promise<Book[] | null> {
+    const book = await prisma.book.findUnique({ where: { id }, include: { categories: true } })
+    if (!book) return null
+    const categoryIds = book.categories.map((link) => link.categoryId)
+    const candidates = await prisma.book.findMany({
+      where: {
+        id: { not: id },
+        OR: [{ author: book.author }, ...(categoryIds.length ? [{ categories: { some: { categoryId: { in: categoryIds } } } }] : [])],
+      },
+      include: withCategories,
+    })
+    const score = (row: (typeof candidates)[number]) =>
+      row.categories.filter((link) => categoryIds.includes(link.categoryId)).length * 2 + (row.author === book.author ? 3 : 0)
+    return candidates
+      .sort(
+        (a, b) =>
+          Number(b.stockQuantity > 0) - Number(a.stockQuantity > 0) ||
+          score(b) - score(a) ||
+          a.title.localeCompare(b.title)
+      )
+      .slice(0, limit)
+      .map(mapBook)
+  }
+
   // Throws RangeError when the price is negative, not finite or too large.
   static async createBook(data: CreateBookRequest): Promise<Book> {
     const { price, categoryIds, ...rest } = data
@@ -156,7 +183,12 @@ export class BookService {
     return mapBook(row)
   }
 
+  // A book that was ordered stays in the shop so order history keeps its titles.
   static async deleteBook(id: number): Promise<void> {
+    const ordered = await prisma.orderItem.count({ where: { bookId: id } })
+    if (ordered > 0) {
+      throw ApiError.conflict('This book is part of existing orders and cannot be deleted', 'BOOK_HAS_ORDERS')
+    }
     await prisma.book.delete({
       where: { id },
     })

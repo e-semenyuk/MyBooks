@@ -36,6 +36,11 @@ enum PromoType {
   FIXED
 }
 
+enum ReviewStatus {
+  VISIBLE
+  HIDDEN
+}
+
 enum OrderStatus {
   PENDING
   CONFIRMED
@@ -56,6 +61,7 @@ model User {
   failedLogins      Int       @default(0)
   lastFailedLoginAt DateTime?
   lockedUntil       DateTime?
+  deactivatedAt     DateTime?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   orders        Order[]
@@ -65,6 +71,9 @@ model User {
   payments      Payment[]
   pushSubscriptions PushSubscription[]
   pushMessages  PushMessage[]
+  reviews       Review[]
+  wishlistItems WishlistItem[]
+  auditEntries  AuditLog[]
 
   @@index([email])
   @@map("users")
@@ -84,6 +93,8 @@ model Book {
   cartItems     CartItem[]
   categories    BookCategory[]
   cover         BookCover?
+  reviews       Review[]
+  wishlistItems WishlistItem[]
 
   @@index([title])
   @@index([author])
@@ -320,4 +331,55 @@ model PushMessage {
 
   @@index([userId])
   @@map("push_messages")
+}
+
+// One review per buyer and book. HIDDEN reviews are kept for admins only.
+model Review {
+  id        Int          @id @default(autoincrement())
+  bookId    Int
+  book      Book         @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  userId    Int
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  rating    Int
+  title     String?
+  body      String?      @db.Text
+  status    ReviewStatus @default(VISIBLE)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  @@unique([bookId, userId])
+  @@index([bookId, status])
+  @@index([userId])
+  @@map("reviews")
+}
+
+model WishlistItem {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bookId    Int
+  book      Book     @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, bookId])
+  @@index([userId])
+  @@map("wishlist_items")
+}
+
+// Who changed what: prices, stock, order status, roles, accounts, moderation, imports.
+model AuditLog {
+  id        Int      @id @default(autoincrement())
+  actorId   Int?
+  actor     User?    @relation(fields: [actorId], references: [id], onDelete: SetNull)
+  action    String
+  entity    String
+  entityId  Int?
+  summary   String
+  details   Json?
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([action])
+  @@index([entity, entityId])
+  @@map("audit_log")
 }

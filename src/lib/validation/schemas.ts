@@ -212,3 +212,53 @@ export const pushSubscriptionSchema = z.object({
 export const pushUnsubscribeSchema = z.object({
   endpoint: z.string({ error: 'Endpoint is required' }).trim().min(1, 'Endpoint is required').max(1000),
 })
+
+const rating = z
+  .number({ error: 'Rating is required' })
+  .int('Rating must be a whole number')
+  .min(1, 'Rating must be 1 to 5')
+  .max(5, 'Rating must be 1 to 5')
+
+const reviewText = (label: string, max: number) =>
+  z
+    .string()
+    .trim()
+    .max(max, `${label} must be at most ${max} characters`)
+    .nullish()
+    .transform((v) => v || null)
+
+export const createReviewSchema = z.object({
+  rating,
+  title: reviewText('Title', 100),
+  body: reviewText('Review', 2000),
+})
+
+export const updateReviewSchema = createReviewSchema
+  .partial()
+  .refine((value) => Object.keys(value).length > 0, 'Nothing to update')
+
+export const moderateReviewSchema = z.object({
+  status: z.enum(['VISIBLE', 'HIDDEN'], { error: 'Status must be VISIBLE or HIDDEN' }),
+})
+
+export const adminReviewQuerySchema = z.object({
+  status: z.enum(['VISIBLE', 'HIDDEN']).optional(),
+  q: z.string().trim().max(100).optional(),
+})
+
+export const wishlistAddSchema = z.object({
+  bookId: z
+    .number({ error: 'Valid book ID is required' })
+    .int('Valid book ID is required')
+    .positive('Valid book ID is required'),
+})
+
+export const auditQuerySchema = z.object({
+  action: z.string().trim().max(50).optional(),
+  entity: z.string().trim().max(50).optional(),
+  actorId: z.coerce.number().int().positive().optional(),
+  from: z.iso.date({ error: 'from must be a date like 2026-10-31' }).optional(),
+  to: z.iso.date({ error: 'to must be a date like 2026-10-31' }).optional(),
+  page: z.coerce.number().int().min(1).catch(1).default(1),
+  pageSize: z.coerce.number().int().min(1).max(100).catch(25).default(25),
+})

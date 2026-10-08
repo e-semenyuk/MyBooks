@@ -87,7 +87,7 @@ export const SEED_PROMOS = [
 
 export async function clearAllData(prisma: PrismaClient): Promise<void> {
   await prisma.$executeRawUnsafe(
-    'TRUNCATE TABLE "email_outbox", "push_messages", "push_subscriptions", "order_events", "order_items", "orders", "cart_items", "book_categories", "categories", "promo_codes", "Book", "users" RESTART IDENTITY CASCADE'
+    'TRUNCATE TABLE "email_outbox", "audit_log", "reviews", "wishlist_items", "push_messages", "push_subscriptions", "order_events", "order_items", "orders", "cart_items", "book_categories", "categories", "promo_codes", "Book", "users" RESTART IDENTITY CASCADE'
   )
 }
 

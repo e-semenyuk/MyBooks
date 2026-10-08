@@ -5,12 +5,16 @@ import { ORDER_STATUSES, OrderStatus, canTransition, nextStatus } from '@/lib/or
 import { useSession } from 'next-auth/react'
 import { EditIcon, TrashIcon } from '@/components/icons'
 import BookCover from '@/components/BookCover'
+import AdminReviews from '@/components/admin/AdminReviews'
 
 interface AdminPageProps {
   showToast: (message: string, type: 'success' | 'error') => void
 }
 
-type Tab = 'books' | 'orders' | 'categories'
+type Tab = 'books' | 'orders' | 'categories' | 'reviews'
+
+// Tabs rendered by their own components
+const EXTRA_TABS: { key: Tab; label: string }[] = [{ key: 'reviews', label: 'Reviews' }]
 
 interface CategoryRow {
   id: number
@@ -73,7 +77,7 @@ export default function AdminPage({ showToast }: AdminPageProps) {
       loadCategories()
     } else if (activeTab === 'categories') {
       loadCategories()
-    } else {
+    } else if (activeTab === 'orders') {
       loadOrders()
     }
   }, [activeTab])
@@ -244,7 +248,8 @@ export default function AdminPage({ showToast }: AdminPageProps) {
         showToast('Book deleted successfully', 'success')
         loadBooks()
       } else {
-        showToast('Failed to delete book', 'error')
+        const data = await response.json().catch(() => null)
+        showToast(data?.code === 'BOOK_HAS_ORDERS' ? data.error : 'Failed to delete book', 'error')
       }
     } catch (error) {
       showToast('Failed to delete book', 'error')
@@ -327,7 +332,7 @@ export default function AdminPage({ showToast }: AdminPageProps) {
         <p className="text-lg text-ink-600">Manage books and orders</p>
       </div>
 
-      <div className="mb-12 inline-flex border-2 border-ink-950" role="tablist">
+      <div className="mb-12 inline-flex max-w-full flex-wrap border-2 border-ink-950" role="tablist">
         <button
           data-testid="admin-books-tab"
           role="tab"
@@ -355,7 +360,21 @@ export default function AdminPage({ showToast }: AdminPageProps) {
         >
           Categories
         </button>
+        {EXTRA_TABS.map((tab) => (
+          <button
+            key={tab.key}
+            data-testid={`admin-${tab.key}-tab`}
+            role="tab"
+            aria-selected={activeTab === tab.key}
+            onClick={() => setActiveTab(tab.key)}
+            className={`${tabClass(tab.key)} border-l-2 border-ink-950`}
+          >
+            {tab.label}
+          </button>
+        ))}
       </div>
+
+      {activeTab === 'reviews' && <AdminReviews showToast={showToast} />}
 
       {activeTab === 'books' && (
         <div className="grid items-start gap-12 lg:grid-cols-3">

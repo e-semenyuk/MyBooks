@@ -7,6 +7,10 @@ import {
   categorySchema,
   createBookSchema,
   createOrderSchema,
+  createReviewSchema,
+  updateReviewSchema,
+  moderateReviewSchema,
+  wishlistAddSchema,
   forgotPasswordSchema,
   localeSchema,
   pushSubscriptionSchema,
@@ -74,6 +78,9 @@ function buildDocument(): Json {
       { name: 'Orders' },
       { name: 'Accounts' },
       { name: 'Notifications' },
+      { name: 'Reviews' },
+      { name: 'Wishlist' },
+      { name: 'Admin' },
       { name: 'Operations' },
       { name: 'Test support', description: 'Only available when ENABLE_TEST_ENDPOINTS=true; otherwise 404.' },
     ],
@@ -117,6 +124,141 @@ function buildDocument(): Json {
           responses: { '201': { description: 'Created', content: jsonContent(ref('Book')) }, ...standardErrors, ...authErrors },
         },
       },
+      '/api/books/{id}/related': {
+        parameters: [idParam('Book id')],
+        get: {
+          tags: ['Books'],
+          summary: 'Up to 4 books that share a category or the author (in stock first, closest match first)',
+          responses: { '200': { description: 'Related books, may be empty', content: jsonContent({ type: 'array', items: ref('Book') }) }, '404': errorResponse('BOOK_NOT_FOUND') },
+        },
+      },
+      '/api/books/{id}/reviews': {
+        parameters: [idParam('Book id')],
+        get: {
+          tags: ['Reviews'],
+          summary: 'Visible reviews of a book with the rating summary',
+          description: 'When signed in, the answer also says whether the viewer may write a review (`canReview`) and returns their own review (`mine`), even if it is hidden.',
+          responses: {
+            '200': {
+              description: 'Reviews',
+              content: jsonContent({
+                type: 'object',
+                properties: {
+                  summary: { type: 'object', properties: { average: { type: 'number' }, count: { type: 'integer' }, distribution: { type: 'object', additionalProperties: { type: 'integer' } } } },
+                  items: { type: 'array', items: { type: 'object', properties: { id: { type: 'integer' }, rating: { type: 'integer' }, title: { type: ['string', 'null'] }, body: { type: ['string', 'null'] }, author: { type: 'string', description: 'First name and last initial' }, createdAt: { type: 'string', format: 'date-time' }, mine: { type: 'boolean' } } } },
+                  mine: { type: ['object', 'null'] },
+                  canReview: { type: 'boolean' },
+                },
+              }),
+            },
+            '404': errorResponse('BOOK_NOT_FOUND'),
+          },
+        },
+        post: {
+          tags: ['Reviews'],
+          summary: 'Review a book you bought (one review per book)',
+          description: 'Allowed when you have an order for the book that is Confirmed, Shipped or Delivered (not cancelled or returned).',
+          security: [{ sessionCookie: [] }],
+          requestBody: { required: true, content: jsonContent(body(createReviewSchema)) },
+          responses: {
+            '201': { description: 'Posted', content: jsonContent({ type: 'object' }) },
+            '400': errorResponse('VALIDATION_ERROR'),
+            '401': authErrors['401'],
+            '403': errorResponse('NOT_PURCHASED'),
+            '404': errorResponse('BOOK_NOT_FOUND'),
+            '409': errorResponse('ALREADY_REVIEWED'),
+          },
+        },
+      },
+      '/api/reviews/{id}': {
+        parameters: [idParam('Review id')],
+        put: {
+          tags: ['Reviews'],
+          summary: 'Edit your own review. Another user\'s review answers 404.',
+          security: [{ sessionCookie: [] }],
+          requestBody: { required: true, content: jsonContent(body(updateReviewSchema)) },
+          responses: { '200': { description: 'Updated', content: jsonContent({ type: 'object' }) }, '400': errorResponse('VALIDATION_ERROR'), '401': authErrors['401'], '404': errorResponse('REVIEW_NOT_FOUND') },
+        },
+        patch: {
+          tags: ['Reviews'],
+          summary: 'Admin: hide or show a review',
+          security: [{ sessionCookie: [] }],
+          requestBody: { required: true, content: jsonContent(body(moderateReviewSchema)) },
+          responses: { '200': { description: 'Updated', content: jsonContent({ type: 'object' }) }, '400': errorResponse('VALIDATION_ERROR'), '401': authErrors['401'], '403': errorResponse('FORBIDDEN'), '404': errorResponse('REVIEW_NOT_FOUND') },
+        },
+        delete: {
+          tags: ['Reviews'],
+          summary: 'Delete your own review (admins can delete any). Another user\'s review answers 404 for non-admins.',
+          security: [{ sessionCookie: [] }],
+          responses: { '200': { description: 'Deleted', content: jsonContent({ type: 'object' }) }, '401': authErrors['401'], '404': errorResponse('REVIEW_NOT_FOUND') },
+        },
+      },
+      '/api/admin/reviews': {
+        get: {
+          tags: ['Admin'],
+          summary: 'Admin: all reviews, newest first (max 200)',
+          security: [{ sessionCookie: [] }],
+          parameters: [
+            { name: 'status', in: 'query', schema: { type: 'string', enum: ['VISIBLE', 'HIDDEN'] } },
+            { name: 'q', in: 'query', schema: { type: 'string' }, description: 'Book title, reader email or review text' },
+          ],
+          responses: { '200': { description: 'Reviews', content: jsonContent({ type: 'array', items: { type: 'object' } }) }, '401': authErrors['401'], '403': errorResponse('FORBIDDEN') },
+        },
+      },
+      '/api/wishlist': {
+        get: {
+          tags: ['Wishlist'],
+          summary: 'Saved books of the signed-in user, newest first',
+          security: [{ sessionCookie: [] }],
+          responses: { '200': { description: 'Saved books', content: jsonContent({ type: 'array', items: { type: 'object', properties: { addedAt: { type: 'string', format: 'date-time' }, book: ref('Book') } } }) }, '401': authErrors['401'] },
+        },
+        post: {
+          tags: ['Wishlist'],
+          summary: 'Save a book. 201 when new, 200 when it was already saved.',
+          security: [{ sessionCookie: [] }],
+          requestBody: { required: true, content: jsonContent(body(wishlistAddSchema)) },
+          responses: { '200': { description: 'Already saved', content: jsonContent({ type: 'object' }) }, '201': { description: 'Saved', content: jsonContent({ type: 'object' }) }, '400': errorResponse('VALIDATION_ERROR'), '401': authErrors['401'], '404': errorResponse('BOOK_NOT_FOUND') },
+        },
+      },
+      '/api/wishlist/{bookId}': {
+        parameters: [{ name: 'bookId', in: 'path', required: true, schema: { type: 'integer' }, description: 'Book id' }],
+        delete: {
+          tags: ['Wishlist'],
+          summary: 'Remove a saved book (also fine when it was not saved)',
+          security: [{ sessionCookie: [] }],
+          responses: { '200': { description: 'Removed', content: jsonContent({ type: 'object' }) }, '400': standardErrors['400'], '401': authErrors['401'] },
+        },
+      },
+      '/api/admin/audit': {
+        get: {
+          tags: ['Admin'],
+          summary: 'Admin: audit log of changes to prices, stock, order status, roles, accounts, reviews and imports, newest first',
+          security: [{ sessionCookie: [] }],
+          parameters: [
+            { name: 'action', in: 'query', schema: { type: 'string' }, description: 'For example BOOK_PRICE_CHANGED, BOOK_STOCK_CHANGED, ORDER_STATUS_CHANGED, USER_ROLE_CHANGED' },
+            { name: 'entity', in: 'query', schema: { type: 'string' }, description: 'book, order, user, review' },
+            { name: 'actorId', in: 'query', schema: { type: 'integer' } },
+            { name: 'from', in: 'query', schema: { type: 'string', format: 'date' } },
+            { name: 'to', in: 'query', schema: { type: 'string', format: 'date' } },
+            { name: 'page', in: 'query', schema: { type: 'integer', default: 1 } },
+            { name: 'pageSize', in: 'query', schema: { type: 'integer', default: 25, maximum: 100 } },
+          ],
+          responses: {
+            '200': {
+              description: 'A page of entries',
+              content: jsonContent({
+                type: 'object',
+                properties: {
+                  items: { type: 'array', items: { type: 'object', properties: { id: { type: 'integer' }, action: { type: 'string' }, entity: { type: 'string' }, entityId: { type: ['integer', 'null'] }, summary: { type: 'string' }, details: {}, createdAt: { type: 'string', format: 'date-time' }, actor: { type: ['object', 'null'] } } } },
+                  total: { type: 'integer' }, page: { type: 'integer' }, pageSize: { type: 'integer' }, totalPages: { type: 'integer' },
+                },
+              }),
+            },
+            '401': authErrors['401'],
+            '403': errorResponse('FORBIDDEN'),
+          },
+        },
+      },
       '/api/books/{id}': {
         parameters: [idParam('Book id')],
         get: {
@@ -133,9 +275,9 @@ function buildDocument(): Json {
         },
         delete: {
           tags: ['Books'],
-          summary: 'Delete a book (admin). Its cart items are removed too.',
+          summary: 'Delete a book (admin). Its cart items, reviews and wishlist entries are removed too. A book that appears in an order cannot be deleted (409 BOOK_HAS_ORDERS).',
           security: [{ sessionCookie: [] }],
-          responses: { '200': { description: 'Deleted', content: jsonContent({ type: 'object', properties: { message: { type: 'string' } } }) }, '400': standardErrors['400'], ...authErrors, '404': errorResponse('NOT_FOUND') },
+          responses: { '200': { description: 'Deleted', content: jsonContent({ type: 'object', properties: { message: { type: 'string' } } }) }, '400': standardErrors['400'], ...authErrors, '404': errorResponse('NOT_FOUND'), '409': errorResponse('BOOK_HAS_ORDERS') },
         },
       },
       '/api/books/{id}/cover': {
@@ -807,6 +949,17 @@ const OPERATION_IDS: Record<string, string> = {
   'post /api/categories': 'createCategory',
   'put /api/categories/{id}': 'renameCategory',
   'delete /api/categories/{id}': 'deleteCategory',
+  'get /api/books/{id}/related': 'listRelatedBooks',
+  'get /api/books/{id}/reviews': 'listBookReviews',
+  'post /api/books/{id}/reviews': 'createReview',
+  'put /api/reviews/{id}': 'updateReview',
+  'patch /api/reviews/{id}': 'moderateReview',
+  'delete /api/reviews/{id}': 'deleteReview',
+  'get /api/admin/reviews': 'listAdminReviews',
+  'get /api/wishlist': 'listWishlist',
+  'post /api/wishlist': 'addToWishlist',
+  'delete /api/wishlist/{bookId}': 'removeFromWishlist',
+  'get /api/admin/audit': 'listAuditLog',
   'get /api/addresses': 'listAddresses',
   'post /api/addresses': 'createAddress',
   'put /api/addresses/{id}': 'updateAddress',

@@ -1,5 +1,5 @@
 // The views the app used to switch between with component state now have URLs.
-export type PageName = 'home' | 'cart' | 'checkout' | 'admin' | 'login' | 'register' | 'profile'
+export type PageName = 'home' | 'cart' | 'checkout' | 'admin' | 'login' | 'register' | 'profile' | 'wishlist'
 
 export const PAGE_PATHS: Record<PageName, string> = {
   home: '/',
@@ -9,6 +9,7 @@ export const PAGE_PATHS: Record<PageName, string> = {
   login: '/login',
   register: '/register',
   profile: '/profile',
+  wishlist: '/wishlist',
 }
 
 export function pageFromPath(pathname: string): PageName | null {

@@ -77,3 +77,9 @@ export const LoginIcon = (p: IconProps) => (
 export const SearchOffIcon = (p: IconProps) => (
   <Svg {...p}><circle cx="11" cy="11" r="6.5" /><path d="m20 20-4.2-4.2M8.5 8.5l5 5M13.5 8.5l-5 5" /></Svg>
 )
+export const HeartIcon = ({ filled, ...p }: IconProps & { filled?: boolean }) => (
+  <Svg {...p} fill={filled ? 'currentColor' : 'none'}><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.600-7 10-7 10z" /></Svg>
+)
+export const StarIcon = ({ filled, ...p }: IconProps & { filled?: boolean }) => (
+  <Svg {...p} fill={filled ? 'currentColor' : 'none'}><path d="m12 3.500 2.600 5.400 5.900.8-4.300 4.100 1 5.800L12 16.800 6.800 19.600l1-5.800L3.500 9.700l5.900-.8z" /></Svg>
+)

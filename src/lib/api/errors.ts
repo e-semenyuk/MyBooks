@@ -16,8 +16,8 @@ export class ApiError extends Error {
   static unauthorized(message = 'Unauthorized - Please login') {
     return new ApiError(401, 'UNAUTHORIZED', message)
   }
-  static forbidden(message = 'Forbidden - Admin access required') {
-    return new ApiError(403, 'FORBIDDEN', message)
+  static forbidden(message = 'Forbidden - Admin access required', code = 'FORBIDDEN') {
+    return new ApiError(403, code, message)
   }
   static notFound(message = 'Not found', code = 'NOT_FOUND') {
     return new ApiError(404, code, message)

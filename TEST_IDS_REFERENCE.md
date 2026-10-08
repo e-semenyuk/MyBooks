@@ -440,6 +440,41 @@ Test IDs follow this pattern:
 | `order-return-error` | Error text in the dialog |
 | `order-detail-history-note-{eventId}` | Reason shown in the status history |
 
+### Reviews (book detail page)
+| Test ID | Element |
+|---|---|
+| `reviews-section` | Section container |
+| `reviews-summary`, `reviews-average`, `reviews-count` | Rating summary (hidden when there are no reviews) |
+| `reviews-empty` | Shown when the book has no visible reviews |
+| `review-form` | Form, shown only to buyers who have not reviewed yet (or while editing) |
+| `review-rating-{1..5}` | Rating radio buttons |
+| `review-title-input`, `review-body-input` | Optional headline and text |
+| `review-submit-button`, `review-cancel-button` | Post or save, cancel an edit |
+| `review-error` | Error text |
+| `review-hint` | "Sign in..." or "Only readers who bought..." message |
+| `review-hidden-notice` | Shown to the author when a moderator hid the review |
+| `reviews-list`, `review-{id}` | Visible reviews |
+| `review-edit-button`, `review-delete-button` | Only on your own review |
+
+### Related books, wishlist
+| Test ID | Element |
+|---|---|
+| `related-books`, `related-book-{id}` | "You may also like" section and its links |
+| `wishlist-toggle-button` | Save or remove on the book page (`aria-pressed`) |
+| `nav-wishlist-button` | Navigation link (signed-in users) |
+| `wishlist-page`, `wishlist-loading`, `wishlist-empty`, `wishlist-list` | Wishlist page states |
+| `wishlist-item-{bookId}`, `wishlist-link-{bookId}`, `wishlist-out-{bookId}` | Row, title link, out-of-stock badge |
+| `wishlist-move-{bookId}`, `wishlist-remove-{bookId}` | Move to cart, remove |
+
+### Admin reviews tab
+| Test ID | Element |
+|---|---|
+| `admin-reviews-tab`, `admin-reviews-section` | Tab and section |
+| `admin-review-filter-search`, `admin-review-filter-status`, `admin-review-filter-apply`, `admin-review-filter-clear` | Filters |
+| `admin-reviews-list`, `admin-no-reviews`, `admin-reviews-loading` | List and states |
+| `admin-review-{id}`, `admin-review-status-{id}` | Row and status badge |
+| `admin-review-hide-{id}`, `admin-review-show-{id}`, `admin-review-delete-{id}` | Moderation buttons |
+
 ## Testing Tips
 
 1. **Use specific selectors**: Prefer `data-testid={`cart-item-${id}`}` over class-based selectors

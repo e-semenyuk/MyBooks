@@ -5,6 +5,9 @@ import Link from 'next/link'
 import BookCover from '@/components/BookCover'
 import NotFound from '@/app/not-found'
 import { ArrowLeftIcon, ArrowRightIcon } from '@/components/icons'
+import RelatedBooks from '@/components/RelatedBooks'
+import ReviewsSection from '@/components/ReviewsSection'
+import WishlistButton from '@/components/WishlistButton'
 import { Book } from '@/types'
 
 interface BookDetailPageProps {
@@ -171,9 +174,13 @@ export default function BookDetailPage({ bookId, showToast, updateCartCount }: B
               {isOutOfStock ? 'Out of Stock' : adding ? 'Adding...' : 'Add to Cart'}
               {!isOutOfStock && <ArrowRightIcon className="h-5 w-5" />}
             </button>
+            <WishlistButton bookId={book.id} showToast={showToast} />
           </div>
         </div>
       </div>
+
+      <ReviewsSection bookId={book.id} showToast={showToast} />
+      <RelatedBooks bookId={book.id} />
     </div>
   )
 }
