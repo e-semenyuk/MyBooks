@@ -11,9 +11,10 @@ interface NavigationProps {
 }
 
 const linkBase =
-  'relative flex h-16 items-center gap-2 border-b-2 px-3 text-sm font-medium transition-colors duration-150'
-const linkIdle = 'border-transparent text-ink-200 hover:text-white'
-const linkActive = 'border-brass-500 text-white'
+  'relative flex h-16 items-center gap-2 px-3 text-sm font-semibold transition-colors duration-150 sm:px-4'
+const linkIdle = 'text-ink-600 hover:text-ink-950'
+const linkActive =
+  'text-ink-950 after:absolute after:inset-x-3 after:bottom-0 after:h-[3px] after:bg-cobalt-500 sm:after:inset-x-4'
 
 export default function Navigation({ cartCount }: NavigationProps) {
   const { data: session, status } = useSession()
@@ -24,25 +25,20 @@ export default function Navigation({ cartCount }: NavigationProps) {
   const link = (page: PageName) => `${linkBase} ${currentPage === page ? linkActive : linkIdle}`
 
   return (
-    <nav data-testid="main-navigation" className="sticky top-0 z-50 bg-ink-950 text-white">
+    <nav data-testid="main-navigation" className="sticky top-0 z-50 border-b-2 border-ink-950 bg-white">
       <div className="mx-auto flex h-16 w-full max-w-page items-center justify-between px-6">
         <button
           data-testid="nav-logo-button"
           onClick={() => onNavigate('home')}
-          className="flex items-center gap-3"
+          className="flex items-center gap-2.5"
         >
-          <span
-            aria-hidden="true"
-            className="flex h-8 w-8 items-center justify-center rounded-sm bg-brass-500 font-display text-lg font-semibold text-ink-950"
-          >
-            D
-          </span>
-          <span className="hidden font-display text-lg font-semibold tracking-tight sm:block">
-            Digital Bookstore
+          <span aria-hidden="true" className="h-4 w-4 bg-cobalt-500" />
+          <span className="font-display text-2xl font-extrabold tracking-tight text-ink-950">
+            bookstore
           </span>
         </button>
 
-        <div className="flex items-center gap-1">
+        <div className="flex items-center">
           <button
             data-testid="nav-home-button"
             onClick={() => onNavigate('home')}
@@ -62,7 +58,7 @@ export default function Navigation({ cartCount }: NavigationProps) {
             {cartCount > 0 && (
               <span
                 data-testid="cart-count-badge"
-                className="num flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-brass-500 px-1.5 text-xs font-semibold text-ink-950"
+                className="num flex h-5 min-w-[1.25rem] items-center justify-center bg-cobalt-500 px-1 font-mono text-xs font-semibold text-white"
               >
                 {cartCount}
               </span>
@@ -79,11 +75,11 @@ export default function Navigation({ cartCount }: NavigationProps) {
             </button>
           )}
 
-          <span aria-hidden="true" className="mx-2 hidden h-5 w-px bg-ink-700 sm:block" />
+          <span aria-hidden="true" className="mx-2 hidden h-6 w-px bg-mist-300 sm:block" />
 
           {status === 'loading' ? (
             <div data-testid="nav-loading" className="flex h-16 items-center px-3">
-              <div className="h-4 w-4 animate-spin rounded-full border-2 border-ink-600 border-t-white" />
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-mist-300 border-t-ink-950" />
             </div>
           ) : session ? (
             <>
@@ -111,7 +107,7 @@ export default function Navigation({ cartCount }: NavigationProps) {
               data-testid="nav-login-button"
               onClick={() => onNavigate('login')}
               aria-label="Login"
-              className="ml-1 flex items-center gap-2 rounded-md border border-ink-500 px-4 py-2 text-sm font-medium text-white transition-colors duration-150 hover:border-white hover:bg-white hover:text-ink-950"
+              className="btn btn-secondary btn-sm ml-1"
             >
               <LoginIcon className="h-4 w-4" />
               <span className="hidden sm:inline">Login</span>

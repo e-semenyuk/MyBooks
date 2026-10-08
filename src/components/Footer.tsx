@@ -1,9 +1,19 @@
 export default function Footer() {
   return (
-    <footer className="border-t border-stone-200 bg-white">
-      <div className="mx-auto flex w-full max-w-page flex-col gap-2 px-6 py-8 text-sm text-stone-500 sm:flex-row sm:items-center sm:justify-between">
-        <p className="font-display text-base font-semibold text-ink-900">Digital Bookstore</p>
-        <p>&copy; {new Date().getFullYear()} Digital Bookstore. All rights reserved.</p>
+    <footer className="bg-ink-950 text-white">
+      <div className="mx-auto grid w-full max-w-page gap-8 px-6 py-14 md:grid-cols-12">
+        <div className="md:col-span-8">
+          <p className="flex items-center gap-3 font-display text-4xl font-extrabold tracking-tight">
+            <span aria-hidden="true" className="h-5 w-5 bg-cobalt-500" />
+            bookstore
+          </p>
+          <p className="mt-3 max-w-md text-sm text-ink-300">
+            A curated catalog of books, delivered.
+          </p>
+        </div>
+        <p className="font-mono text-xs text-ink-300 md:col-span-4 md:text-right">
+          &copy; {new Date().getFullYear()} Bookstore. All rights reserved.
+        </p>
       </div>
     </footer>
   )

@@ -8,9 +8,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const { cartCount } = useApp()
 
   return (
-    <div className="flex min-h-screen flex-col bg-stone-50">
+    <div className="flex min-h-screen flex-col bg-white">
       <Navigation cartCount={cartCount} />
-      <main className="mx-auto w-full max-w-page flex-1 px-6 py-10">{children}</main>
+      <main className="mx-auto w-full max-w-page flex-1 px-6 py-12">{children}</main>
       <Footer />
     </div>
   )

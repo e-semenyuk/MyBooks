@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import BookCard from '@/components/BookCard'
 import { Book } from '@/types'
-import { BookIcon, SearchIcon, XIcon } from '@/components/icons'
+import { SearchIcon, XIcon } from '@/components/icons'
 
 interface HomePageProps {
   showToast: (message: string, type: 'success' | 'error') => void
@@ -66,19 +66,22 @@ export default function HomePage({ showToast, updateCartCount }: HomePageProps) 
 
   return (
     <div data-testid="home-page" className="animate-fade-in">
-      <section
-        data-testid="search-section"
-        className="mb-12 border-b border-stone-200 pb-12"
-      >
-        <p className="section-label mb-4">Catalog</p>
-        <h2 className="page-title mb-3 max-w-2xl">Find your next read</h2>
-        <p className="mb-8 max-w-xl text-lg text-stone-600">
+      <section data-testid="search-section" className="mb-14">
+        <p className="section-label mb-8">01 / Catalog</p>
+        <h2 className="hero-title mb-8">
+          Read more<span className="text-cobalt-500">.</span>
+        </h2>
+        <p className="mb-10 max-w-xl text-lg text-ink-600">
           Classics and contemporary titles, in stock and ready to ship.
         </p>
 
-        <form data-testid="search-form" onSubmit={handleSearch} className="flex max-w-2xl gap-3">
+        <form
+          data-testid="search-form"
+          onSubmit={handleSearch}
+          className="flex max-w-3xl border-2 border-ink-950 focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-cobalt-500"
+        >
           <div className="relative flex-1">
-            <SearchIcon className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-stone-500" />
+            <SearchIcon className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-ink-500" />
             <input
               data-testid="search-input"
               type="text"
@@ -86,10 +89,14 @@ export default function HomePage({ showToast, updateCartCount }: HomePageProps) 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search by title, author, or ISBN"
-              className="input py-3 pl-12 text-base"
+              className="h-14 w-full bg-white pl-12 pr-4 text-base text-ink-950 placeholder:text-ink-500 focus:outline-none"
             />
           </div>
-          <button data-testid="search-submit-button" type="submit" className="btn btn-primary px-6">
+          <button
+            data-testid="search-submit-button"
+            type="submit"
+            className="btn btn-primary min-h-[52px] border-0 px-8"
+          >
             Search
           </button>
         </form>
@@ -100,25 +107,25 @@ export default function HomePage({ showToast, updateCartCount }: HomePageProps) 
           data-testid="books-loading"
           aria-busy="true"
           aria-label="Loading books"
-          className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3"
+          className="grid grid-cols-1 border-l border-t-2 border-ink-950 sm:grid-cols-2 lg:grid-cols-3"
         >
           {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="overflow-hidden rounded-lg border border-stone-200 bg-white">
-              <div className="skeleton aspect-[2/1] w-full rounded-none" />
+            <div key={i} className="border-b border-r border-mist-200">
+              <div className="skeleton aspect-[6/5] w-full" />
               <div className="space-y-3 p-5">
-                <div className="skeleton h-5 w-20" />
-                <div className="skeleton h-6 w-3/4" />
+                <div className="skeleton h-5 w-24" />
+                <div className="skeleton h-7 w-3/4" />
                 <div className="skeleton h-4 w-1/2" />
-                <div className="skeleton h-16 w-full" />
+                <div className="skeleton h-10 w-full" />
               </div>
             </div>
           ))}
         </div>
       ) : books.length === 0 ? (
         <div data-testid="no-books-message" className="empty-state">
-          <BookIcon className="mx-auto mb-4 h-8 w-8 text-stone-500" />
-          <h3 className="panel-title mb-2">No books found</h3>
-          <p className="mb-6 text-sm text-stone-600">
+          <p className="section-label mb-4">0 results</p>
+          <h3 className="panel-title mb-3">No books found</h3>
+          <p className="mb-8 max-w-md text-ink-600">
             Try a different title, author or ISBN, or browse the full catalog.
           </p>
           <button
@@ -134,8 +141,8 @@ export default function HomePage({ showToast, updateCartCount }: HomePageProps) 
         </div>
       ) : (
         <>
-          <div className="mb-6 flex items-baseline justify-between">
-            <h3 data-testid="books-count" className="font-display text-2xl font-semibold tracking-tight text-ink-900">
+          <div className="flex flex-wrap items-baseline justify-between gap-3 border-t-2 border-ink-950 pb-5 pt-5">
+            <h3 data-testid="books-count" className="font-display text-2xl font-bold tracking-tight text-ink-950">
               {searchQuery ? `Search Results (${books.length})` : `All Books (${books.length})`}
             </h3>
             {searchQuery && (
@@ -145,14 +152,17 @@ export default function HomePage({ showToast, updateCartCount }: HomePageProps) 
                   setSearchQuery('')
                   loadBooks('')
                 }}
-                className="flex items-center gap-1.5 text-sm font-medium text-brass-700 transition-colors hover:text-ink-900"
+                className="flex items-center gap-1.5 text-sm font-semibold text-cobalt-500 underline underline-offset-4 transition-colors hover:text-cobalt-700"
               >
                 <XIcon className="h-4 w-4" />
                 Clear Search
               </button>
             )}
           </div>
-          <div data-testid="books-grid" className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <div
+            data-testid="books-grid"
+            className="grid grid-cols-1 border-l border-t border-mist-200 sm:grid-cols-2 lg:grid-cols-3"
+          >
             {books.map((book) => (
               <BookCard key={book.id} book={book} onAddToCart={handleAddToCart} />
             ))}
