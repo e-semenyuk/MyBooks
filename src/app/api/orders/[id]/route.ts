@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { OrderService } from '@/lib/services/orderService'
+import { OrderService, OrderNotFoundError } from '@/lib/services/orderService'
+import { InvalidStatusError, InvalidTransitionError } from '@/lib/orderStatus'
 import { requireAdmin, requireAuth } from '@/lib/auth-helpers'
 
 // GET /api/orders/:id - Get an order by ID
@@ -74,6 +75,15 @@ export async function PATCH(
 
     return NextResponse.json(order)
   } catch (error) {
+    if (error instanceof InvalidStatusError) {
+      return NextResponse.json({ error: error.message, code: error.code }, { status: 400 })
+    }
+    if (error instanceof OrderNotFoundError) {
+      return NextResponse.json({ error: 'Order not found', code: error.code }, { status: 404 })
+    }
+    if (error instanceof InvalidTransitionError) {
+      return NextResponse.json({ error: error.message, code: error.code }, { status: 409 })
+    }
     console.error('Error updating order:', error)
     return NextResponse.json(
       { error: 'Failed to update order' },

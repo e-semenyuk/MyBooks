@@ -5,6 +5,7 @@ import { CreateOrderRequest } from '@/types'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { requireAdmin } from '@/lib/auth-helpers'
+import { isOrderStatus } from '@/lib/orderStatus'
 
 // GET /api/orders - Get all orders (admin only) or user's orders
 export async function GET(request: NextRequest) {
@@ -27,6 +28,12 @@ export async function GET(request: NextRequest) {
       if (email) {
         orders = await OrderService.getOrdersByCustomerEmail(email)
       } else if (status) {
+        if (!isOrderStatus(status)) {
+          return NextResponse.json(
+            { error: `Invalid order status: ${status}`, code: 'INVALID_STATUS' },
+            { status: 400 }
+          )
+        }
         orders = await OrderService.getOrdersByStatus(status)
       } else if (userId) {
         orders = await OrderService.getOrdersByUserId(parseInt(userId))

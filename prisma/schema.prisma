@@ -14,6 +14,14 @@ enum UserRole {
   ADMIN
 }
 
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
 model User {
   id            Int       @id @default(autoincrement())
   email         String    @unique
@@ -33,7 +41,7 @@ model Book {
   title         String
   author        String
   isbn          String?     @unique
-  price         Float
+  priceCents    Int
   description   String?     @db.Text
   stockQuantity Int         @default(0)
   createdAt     DateTime    @default(now())
@@ -65,8 +73,8 @@ model Order {
   customerEmail   String
   customerAddress String      @db.Text
   orderDate       DateTime    @default(now())
-  totalAmount     Float
-  status          String      @default("PENDING")
+  totalCents      Int
+  status          OrderStatus @default(CONFIRMED)
   orderItems      OrderItem[]
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
@@ -82,8 +90,8 @@ model OrderItem {
   id       Int   @id @default(autoincrement())
   orderId  Int
   bookId   Int
-  quantity Int
-  price    Float
+  quantity   Int
+  priceCents Int
   order    Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
   book     Book  @relation(fields: [bookId], references: [id])
 

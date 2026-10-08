@@ -62,6 +62,12 @@ export async function PUT(
 
     return NextResponse.json(book)
   } catch (error) {
+    if (error instanceof RangeError) {
+      return NextResponse.json(
+        { error: error.message, code: 'INVALID_AMOUNT' },
+        { status: 400 }
+      )
+    }
     console.error('Error updating book:', error)
     return NextResponse.json(
       { error: 'Failed to update book' },

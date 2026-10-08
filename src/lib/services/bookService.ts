@@ -1,17 +1,30 @@
+import type { Book as BookRow } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
+import { mapBook } from '@/lib/mappers'
+import { toCents } from '@/lib/money'
 import { Book, CreateBookRequest, UpdateBookRequest } from '@/types'
 
 export class BookService {
   static async getAllBooks(): Promise<Book[]> {
-    return await prisma.book.findMany({
+    const rows = await prisma.book.findMany({
       orderBy: { title: 'asc' },
     })
+    return rows.map(mapBook)
   }
 
   static async getBookById(id: number): Promise<Book | null> {
-    return await prisma.book.findUnique({
+    const row = await prisma.book.findUnique({
       where: { id },
     })
+    return row ? mapBook(row) : null
+  }
+
+  // Raw rows (prices in cents) for callers that do money math in one query.
+  static async getRowsByIds(ids: number[]): Promise<Map<number, BookRow>> {
+    const rows = await prisma.book.findMany({
+      where: { id: { in: Array.from(new Set(ids)) } },
+    })
+    return new Map(rows.map((row) => [row.id, row]))
   }
 
   static async searchBooks(query: string): Promise<Book[]> {
@@ -19,7 +32,7 @@ export class BookService {
       return this.getAllBooks()
     }
 
-    return await prisma.book.findMany({
+    const rows = await prisma.book.findMany({
       where: {
         OR: [
           { title: { contains: query, mode: 'insensitive' } },
@@ -28,28 +41,38 @@ export class BookService {
       },
       orderBy: { title: 'asc' },
     })
+    return rows.map(mapBook)
   }
 
   static async getAvailableBooks(): Promise<Book[]> {
-    return await prisma.book.findMany({
+    const rows = await prisma.book.findMany({
       where: {
         stockQuantity: { gt: 0 },
       },
       orderBy: { title: 'asc' },
     })
+    return rows.map(mapBook)
   }
 
+  // Throws RangeError when the price is negative, not finite or too large.
   static async createBook(data: CreateBookRequest): Promise<Book> {
-    return await prisma.book.create({
-      data,
+    const { price, ...rest } = data
+    const row = await prisma.book.create({
+      data: { ...rest, priceCents: toCents(price) },
     })
+    return mapBook(row)
   }
 
   static async updateBook(id: number, data: UpdateBookRequest): Promise<Book> {
-    return await prisma.book.update({
+    const { price, ...rest } = data
+    const row = await prisma.book.update({
       where: { id },
-      data,
+      data: {
+        ...rest,
+        ...(price !== undefined ? { priceCents: toCents(price) } : {}),
+      },
     })
+    return mapBook(row)
   }
 
   static async deleteBook(id: number): Promise<void> {
@@ -60,7 +83,7 @@ export class BookService {
 
   static async updateStock(bookId: number, quantity: number): Promise<boolean> {
     const book = await this.getBookById(bookId)
-    
+
     if (!book) {
       return false
     }
@@ -84,4 +107,3 @@ export class BookService {
     return book ? book.stockQuantity >= quantity : false
   }
 }
-

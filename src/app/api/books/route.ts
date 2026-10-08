@@ -42,6 +42,12 @@ export async function POST(request: NextRequest) {
     const book = await BookService.createBook(body)
     return NextResponse.json(book, { status: 201 })
   } catch (error) {
+    if (error instanceof RangeError) {
+      return NextResponse.json(
+        { error: error.message, code: 'INVALID_AMOUNT' },
+        { status: 400 }
+      )
+    }
     console.error('Error creating book:', error)
     return NextResponse.json(
       { error: 'Failed to create book' },

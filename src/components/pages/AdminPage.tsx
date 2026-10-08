@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { ORDER_STATUSES, OrderStatus, canTransition } from '@/lib/orderStatus'
 import { useSession } from 'next-auth/react'
 
 interface AdminPageProps {
@@ -24,7 +25,7 @@ interface Order {
   customerName: string
   customerEmail: string
   totalAmount: number
-  status: string
+  status: OrderStatus
   orderDate: string
   orderItems: any[]
 }
@@ -415,11 +416,15 @@ export default function AdminPage({ showToast }: AdminPageProps) {
                         onChange={(e) => handleUpdateOrderStatus(order.id, e.target.value)}
                         className="mt-2 px-3 py-1 rounded-lg border-2 border-gray-200 text-sm font-semibold"
                       >
-                        <option value="PENDING">Pending</option>
-                        <option value="CONFIRMED">Confirmed</option>
-                        <option value="SHIPPED">Shipped</option>
-                        <option value="DELIVERED">Delivered</option>
-                        <option value="CANCELLED">Cancelled</option>
+                        {ORDER_STATUSES.map((status) => (
+                          <option
+                            key={status}
+                            value={status}
+                            disabled={status !== order.status && !canTransition(order.status, status)}
+                          >
+                            {status.charAt(0) + status.slice(1).toLowerCase()}
+                          </option>
+                        ))}
                       </select>
                     </div>
                   </div>

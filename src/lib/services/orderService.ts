@@ -1,7 +1,25 @@
+import type { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
+import { mapOrder } from '@/lib/mappers'
+import {
+  InvalidStatusError,
+  InvalidTransitionError,
+  OrderStatus,
+  canTransition,
+  isOrderStatus,
+} from '@/lib/orderStatus'
 import { Order, OrderWithItems, CreateOrderRequest } from '@/types'
 import { CartService } from './cartService'
 import { BookService } from './bookService'
+
+const withItems = { orderItems: { include: { book: true } } } satisfies Prisma.OrderInclude
+
+export class OrderNotFoundError extends Error {
+  readonly code = 'ORDER_NOT_FOUND'
+  constructor(id: number) {
+    super(`Order not found: ${id}`)
+  }
+}
 
 export class OrderService {
   static async createOrder(
@@ -9,17 +27,20 @@ export class OrderService {
     data: CreateOrderRequest,
     userId?: number | null
   ): Promise<Order> {
-    // Get cart items
     const cartItems = await CartService.getCartItems(sessionId)
 
     if (cartItems.length === 0) {
       throw new Error('Cart is empty')
     }
 
-    // Validate stock availability for all items first
+    // One query for every book in the cart
+    const books = await BookService.getRowsByIds(cartItems.map((item) => item.bookId))
+
+    // Validate stock for all items first and add up the total in cents
+    let totalCents = 0
     for (const cartItem of cartItems) {
-      const book = await BookService.getBookById(cartItem.bookId)
-      
+      const book = books.get(cartItem.bookId)
+
       if (!book) {
         throw new Error(`Book not found with ID: ${cartItem.bookId}`)
       }
@@ -27,45 +48,32 @@ export class OrderService {
       if (book.stockQuantity < cartItem.quantity) {
         throw new Error(`Insufficient stock for book: ${book.title}`)
       }
-    }
 
-    // Calculate total
-    let totalAmount = 0
-    const bookCache = new Map()
-
-    for (const cartItem of cartItems) {
-      const book = await BookService.getBookById(cartItem.bookId)
-      if (book) {
-        bookCache.set(cartItem.bookId, book)
-        totalAmount += book.price * cartItem.quantity
-      }
+      totalCents += book.priceCents * cartItem.quantity
     }
 
     // Create order with items in a transaction
     const order = await prisma.$transaction(async (tx) => {
-      // Create order
       const newOrder = await tx.order.create({
         data: {
           userId: userId || null,
           customerName: data.customerName,
           customerEmail: data.customerEmail,
           customerAddress: data.customerAddress,
-          totalAmount,
+          totalCents,
           status: 'CONFIRMED',
         },
       })
 
-      // Create order items and update stock
       for (const cartItem of cartItems) {
-        const book = bookCache.get(cartItem.bookId)
+        const book = books.get(cartItem.bookId)!
 
-        // Create order item
         await tx.orderItem.create({
           data: {
             orderId: newOrder.id,
             bookId: cartItem.bookId,
             quantity: cartItem.quantity,
-            price: book.price,
+            priceCents: book.priceCents,
           },
         })
 
@@ -83,85 +91,96 @@ export class OrderService {
       return newOrder
     })
 
-    // Clear cart
     await CartService.clearCart(sessionId)
 
-    return order
+    return mapOrder(order)
   }
 
   static async getAllOrders(): Promise<Order[]> {
-    return await prisma.order.findMany({
+    const rows = await prisma.order.findMany({
       orderBy: { orderDate: 'desc' },
-      include: {
-        orderItems: {
-          include: {
-            book: true,
-          },
-        },
-      },
+      include: withItems,
     })
+    return rows.map((row) => mapOrder(row))
   }
 
   static async getOrderById(id: number): Promise<OrderWithItems | null> {
-    return await prisma.order.findUnique({
+    const row = await prisma.order.findUnique({
       where: { id },
-      include: {
-        orderItems: {
-          include: {
-            book: true,
-          },
-        },
-      },
-    }) as OrderWithItems | null
+      include: withItems,
+    })
+    return row ? mapOrder(row) : null
   }
 
   static async getOrdersByCustomerEmail(email: string): Promise<Order[]> {
-    return await prisma.order.findMany({
+    const rows = await prisma.order.findMany({
       where: { customerEmail: email },
       orderBy: { orderDate: 'desc' },
-      include: {
-        orderItems: {
-          include: {
-            book: true,
-          },
-        },
-      },
+      include: withItems,
     })
+    return rows.map((row) => mapOrder(row))
   }
 
-  static async getOrdersByStatus(status: string): Promise<Order[]> {
-    return await prisma.order.findMany({
+  static async getOrdersByStatus(status: OrderStatus): Promise<Order[]> {
+    const rows = await prisma.order.findMany({
       where: { status },
       orderBy: { orderDate: 'desc' },
-      include: {
-        orderItems: {
-          include: {
-            book: true,
-          },
-        },
-      },
+      include: withItems,
     })
+    return rows.map((row) => mapOrder(row))
   }
 
   static async getOrdersByUserId(userId: number): Promise<Order[]> {
-    return await prisma.order.findMany({
+    const rows = await prisma.order.findMany({
       where: { userId },
       orderBy: { orderDate: 'desc' },
-      include: {
-        orderItems: {
-          include: {
-            book: true,
-          },
-        },
-      },
+      include: withItems,
     })
+    return rows.map((row) => mapOrder(row))
   }
 
-  static async updateOrderStatus(id: number, status: string): Promise<Order> {
-    return await prisma.order.update({
-      where: { id },
-      data: { status },
+  // Moves an order along the allowed status flow. Cancelling puts the stock back.
+  // Throws InvalidStatusError, OrderNotFoundError or InvalidTransitionError.
+  static async updateOrderStatus(id: number, status: unknown): Promise<Order> {
+    if (!isOrderStatus(status)) {
+      throw new InvalidStatusError(status)
+    }
+
+    return await prisma.$transaction(async (tx) => {
+      const order = await tx.order.findUnique({
+        where: { id },
+        include: { orderItems: true },
+      })
+
+      if (!order) {
+        throw new OrderNotFoundError(id)
+      }
+
+      if (!canTransition(order.status, status)) {
+        throw new InvalidTransitionError(order.status, status)
+      }
+
+      // Guard against a concurrent change between the read above and this write
+      const changed = await tx.order.updateMany({
+        where: { id, status: order.status },
+        data: { status },
+      })
+
+      if (changed.count === 0) {
+        throw new InvalidTransitionError(order.status, status)
+      }
+
+      if (status === 'CANCELLED') {
+        for (const item of order.orderItems) {
+          await tx.book.update({
+            where: { id: item.bookId },
+            data: { stockQuantity: { increment: item.quantity } },
+          })
+        }
+      }
+
+      const updated = await tx.order.findUniqueOrThrow({ where: { id } })
+      return mapOrder(updated)
     })
   }
 }
-

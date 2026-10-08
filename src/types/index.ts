@@ -1,3 +1,5 @@
+import type { OrderStatus } from '@/lib/orderStatus'
+
 // Database Models
 export interface Book {
   id: number
@@ -28,7 +30,7 @@ export interface Order {
   customerAddress: string
   orderDate: Date
   totalAmount: number
-  status: string
+  status: OrderStatus
   orderItems?: OrderItem[]
   createdAt?: Date
   updatedAt?: Date

@@ -1,6 +1,8 @@
 import { prisma } from '@/lib/prisma'
 import { CartItem, CartItemWithBook } from '@/types'
 import { BookService } from './bookService'
+import { mapBook } from '@/lib/mappers'
+import { fromCents } from '@/lib/money'
 
 export class CartService {
   static async getCartItems(sessionId: string): Promise<CartItem[]> {
@@ -12,18 +14,13 @@ export class CartService {
 
   static async getCartItemsWithBooks(sessionId: string): Promise<CartItemWithBook[]> {
     const cartItems = await this.getCartItems(sessionId)
-    
-    const itemsWithBooks = await Promise.all(
-      cartItems.map(async (item) => {
-        const book = await BookService.getBookById(item.bookId)
-        return {
-          ...item,
-          book: book!,
-        }
-      })
-    )
+    const rows = await BookService.getRowsByIds(cartItems.map((item) => item.bookId))
 
-    return itemsWithBooks.filter(item => item.book !== null)
+    // Items whose book no longer exists are left out
+    return cartItems.flatMap((item) => {
+      const row = rows.get(item.bookId)
+      return row ? [{ ...item, book: mapBook(row) }] : []
+    })
   }
 
   static async addToCart(sessionId: string, bookId: number, quantity: number): Promise<CartItem> {
@@ -85,16 +82,13 @@ export class CartService {
 
   static async calculateCartTotal(sessionId: string): Promise<number> {
     const cartItems = await this.getCartItems(sessionId)
-    let total = 0
+    const rows = await BookService.getRowsByIds(cartItems.map((item) => item.bookId))
 
-    for (const item of cartItems) {
-      const book = await BookService.getBookById(item.bookId)
-      if (book) {
-        total += book.price * item.quantity
-      }
-    }
+    const totalCents = cartItems.reduce((sum, item) => {
+      const row = rows.get(item.bookId)
+      return row ? sum + row.priceCents * item.quantity : sum
+    }, 0)
 
-    return total
+    return fromCents(totalCents)
   }
 }
-
