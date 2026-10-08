@@ -50,7 +50,8 @@ function limiter(name: string, limit: number, windowMs: number): SlidingWindowLi
 }
 
 export const registerLimiter = () => limiter('register', 20, 60 * 60 * 1000)
-export const loginFailureLimiter = () => limiter('login', 10, 10 * 60 * 1000)
+export const forgotLimiter = () => limiter('forgot', 5, 60 * 60 * 1000)
+export const resendLimiter = () => limiter('resend', 3, 60 * 60 * 1000)
 
 export function clientIp(headers: Headers | Record<string, string | string[] | undefined>): string {
   const get = (name: string) => {

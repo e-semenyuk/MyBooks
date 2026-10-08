@@ -75,21 +75,35 @@ export const updateOrderStatusSchema = z.object({
   status: z.string({ error: 'Status is required' }).min(1, 'Status is required'),
 })
 
+const passwordRule = z
+  .string({ error: 'Password is required' })
+  .min(8, 'Password must be at least 8 characters')
+  .max(72, 'Password must be at most 72 characters')
+  .regex(/[A-Za-z]/, 'Password must contain a letter')
+  .regex(/[0-9]/, 'Password must contain a digit')
+
+const emailRule = z
+  .string({ error: 'Email is required' })
+  .trim()
+  .toLowerCase()
+  .max(254, 'Email is too long')
+  .pipe(z.email('Email is not valid'))
+
 export const registerSchema = z.object({
   name: text('Name', 100),
-  email: z
-    .string({ error: 'Email is required' })
-    .trim()
-    .toLowerCase()
-    .max(254, 'Email is too long')
-    .pipe(z.email('Email is not valid')),
-  password: z
-    .string({ error: 'Password is required' })
-    .min(8, 'Password must be at least 8 characters')
-    .max(72, 'Password must be at most 72 characters')
-    .regex(/[A-Za-z]/, 'Password must contain a letter')
-    .regex(/[0-9]/, 'Password must contain a digit'),
+  email: emailRule,
+  password: passwordRule,
 })
+
+const tokenRule = z
+  .string({ error: 'Token is required' })
+  .trim()
+  .min(20, 'Token is not valid')
+  .max(200, 'Token is not valid')
+
+export const forgotPasswordSchema = z.object({ email: emailRule })
+export const resetPasswordSchema = z.object({ token: tokenRule, password: passwordRule })
+export const verifyEmailSchema = z.object({ token: tokenRule })
 
 export const orderFilterSchema = z.object({
   email: z.string().optional(),

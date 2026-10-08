@@ -2,6 +2,9 @@ import { describe, expect, it } from 'vitest'
 import {
   addToCartSchema,
   addressSchema,
+  forgotPasswordSchema,
+  resetPasswordSchema,
+  verifyEmailSchema,
   bookListQuerySchema,
   categorySchema,
   createBookSchema,
@@ -210,5 +213,27 @@ describe('addressSchema', () => {
     const result = addressSchema.safeParse(input)
     expect(result.success).toBe(false)
     expect(result.error?.issues[0]?.message).toBe(message)
+  })
+})
+
+describe('account token schemas', () => {
+  const token = 'a'.repeat(43)
+
+  it('lowercases the email for a reset request', () => {
+    expect(forgotPasswordSchema.parse({ email: ' Ann@Example.COM ' })).toEqual({ email: 'ann@example.com' })
+    expect(forgotPasswordSchema.safeParse({ email: 'nope' }).success).toBe(false)
+  })
+
+  it('applies the registration password rules to a reset', () => {
+    expect(resetPasswordSchema.parse({ token, password: 'abcdef12' }).password).toBe('abcdef12')
+    expect(resetPasswordSchema.safeParse({ token, password: 'short1' }).success).toBe(false)
+    expect(resetPasswordSchema.safeParse({ token, password: 'abcdefgh' }).success).toBe(false)
+  })
+
+  it('rejects missing or implausible tokens', () => {
+    expect(verifyEmailSchema.parse({ token })).toEqual({ token })
+    expect(verifyEmailSchema.safeParse({ token: 'short' }).success).toBe(false)
+    expect(verifyEmailSchema.safeParse({}).success).toBe(false)
+    expect(resetPasswordSchema.safeParse({ token: 'x'.repeat(201), password: 'abcdef12' }).success).toBe(false)
   })
 })

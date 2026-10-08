@@ -7,6 +7,9 @@ import {
   categorySchema,
   createBookSchema,
   createOrderSchema,
+  forgotPasswordSchema,
+  resetPasswordSchema,
+  verifyEmailSchema,
   quoteSchema,
   registerSchema,
   updateBookSchema,
@@ -300,6 +303,7 @@ function buildDocument(): Json {
             '201': { description: 'Created', content: jsonContent(ref('Order')) },
             '400': errorResponse('VALIDATION_ERROR, ORDER_REJECTED (empty cart, missing book, not enough stock), INVALID_PROMO, PROMO_EXPIRED or PROMO_EXHAUSTED'),
             '401': authErrors['401'],
+            '403': errorResponse('EMAIL_NOT_VERIFIED: confirm the email address first'),
           },
         },
       },
@@ -367,12 +371,106 @@ function buildDocument(): Json {
       '/api/register': {
         post: {
           tags: ['Accounts'],
-          summary: 'Create an account (role USER). Email is stored in lowercase.',
+          summary: 'Create an account (role USER). Email is stored in lowercase. A verification email is sent; ordering needs the address to be confirmed.',
           requestBody: { required: true, content: jsonContent(body(registerSchema, ['email'])) },
           responses: {
             '201': { description: 'Registered', content: jsonContent({ type: 'object', properties: { message: { type: 'string' }, user: ref('User') } }) },
             '400': errorResponse('VALIDATION_ERROR or EMAIL_TAKEN'),
             '429': errorResponse('RATE_LIMITED (Retry-After header)'),
+          },
+        },
+      },
+      '/api/account/me': {
+        get: {
+          tags: ['Accounts'],
+          summary: 'The signed-in user and whether the email address is verified',
+          security: [{ sessionCookie: [] }],
+          responses: {
+            '200': {
+              description: 'Account',
+              content: jsonContent({
+                type: 'object',
+                properties: {
+                  id: { type: 'integer' }, email: { type: 'string' }, name: { type: 'string' },
+                  role: { type: 'string', enum: ['USER', 'ADMIN'] }, emailVerified: { type: 'boolean' },
+                },
+              }),
+            },
+            '401': authErrors['401'],
+          },
+        },
+      },
+      '/api/account/forgot-password': {
+        post: {
+          tags: ['Accounts'],
+          summary: 'Email a password reset link. The answer is the same whether or not the address has an account.',
+          description: 'The link works once and expires after 30 minutes. A new request replaces the previous link. Limited to 5 requests per hour per address and client.',
+          requestBody: { required: true, content: jsonContent(body(forgotPasswordSchema, ['email'])) },
+          responses: {
+            '200': { description: 'Always the same message', content: jsonContent({ type: 'object', properties: { message: { type: 'string' } } }) },
+            '400': errorResponse('VALIDATION_ERROR'),
+            '429': errorResponse('RATE_LIMITED (Retry-After header)'),
+          },
+        },
+      },
+      '/api/account/reset-password': {
+        post: {
+          tags: ['Accounts'],
+          summary: 'Set a new password with the emailed token. Also clears a login lock and confirms the email address.',
+          requestBody: { required: true, content: jsonContent(body(resetPasswordSchema)) },
+          responses: {
+            '200': { description: 'Password changed', content: jsonContent({ type: 'object', properties: { message: { type: 'string' } } }) },
+            '400': errorResponse('VALIDATION_ERROR, TOKEN_INVALID (unknown or already used) or TOKEN_EXPIRED'),
+          },
+        },
+      },
+      '/api/account/verify-email': {
+        post: {
+          tags: ['Accounts'],
+          summary: 'Confirm the email address with the emailed token (valid for 24 hours)',
+          requestBody: { required: true, content: jsonContent(body(verifyEmailSchema)) },
+          responses: {
+            '200': { description: 'Verified', content: jsonContent({ type: 'object', properties: { message: { type: 'string' } } }) },
+            '400': errorResponse('VALIDATION_ERROR, TOKEN_INVALID or TOKEN_EXPIRED'),
+          },
+        },
+      },
+      '/api/account/resend-verification': {
+        post: {
+          tags: ['Accounts'],
+          summary: 'Send the verification email again (3 per hour)',
+          security: [{ sessionCookie: [] }],
+          responses: {
+            '200': { description: 'Sent', content: jsonContent({ type: 'object', properties: { message: { type: 'string' } } }) },
+            '401': authErrors['401'],
+            '409': errorResponse('ALREADY_VERIFIED'),
+            '429': errorResponse('RATE_LIMITED (Retry-After header)'),
+          },
+        },
+      },
+      '/api/test/emails': {
+        get: {
+          tags: ['Test support'],
+          summary: 'The latest emails the app sent, newest first (reset and verification links are in the body)',
+          parameters: [
+            { name: 'x-test-secret', in: 'header', required: true, schema: { type: 'string' } },
+            { name: 'to', in: 'query', required: false, schema: { type: 'string' }, description: 'Only emails to this address' },
+          ],
+          responses: {
+            '200': {
+              description: 'Up to 20 emails',
+              content: jsonContent({
+                type: 'array',
+                items: {
+                  type: 'object',
+                  properties: {
+                    id: { type: 'integer' }, to: { type: 'string' }, subject: { type: 'string' }, body: { type: 'string' },
+                    createdAt: { type: 'string', format: 'date-time' }, sentAt: { type: ['string', 'null'] }, error: { type: ['string', 'null'] },
+                  },
+                },
+              }),
+            },
+            '404': errorResponse('Disabled or wrong secret'),
           },
         },
       },
@@ -536,6 +634,12 @@ const OPERATION_IDS: Record<string, string> = {
   'get /api/orders/{id}': 'getOrder',
   'patch /api/orders/{id}': 'updateOrderStatus',
   'post /api/register': 'register',
+  'get /api/account/me': 'getAccount',
+  'post /api/account/forgot-password': 'forgotPassword',
+  'post /api/account/reset-password': 'resetPassword',
+  'post /api/account/verify-email': 'verifyEmail',
+  'post /api/account/resend-verification': 'resendVerification',
+  'get /api/test/emails': 'listTestEmails',
   'post /api/test/reset': 'resetTestData',
   'post /api/test/seed': 'seedTestData',
 }

@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useSession } from 'next-auth/react'
 import { ArrowRightIcon } from '@/components/icons'
 import AddressBook from '@/components/AddressBook'
+import VerifyEmailBanner from '@/components/VerifyEmailBanner'
 
 interface ProfilePageProps {
   showToast: (message: string, type: 'success' | 'error') => void
@@ -69,6 +70,8 @@ export default function ProfilePage({ showToast }: ProfilePageProps) {
 
   return (
     <div data-testid="profile-page" className="animate-fade-in">
+      <VerifyEmailBanner showToast={showToast} />
+
       <div data-testid="profile-header" className="mb-14">
         <p className="section-label mb-6">05 / Account</p>
         <h2 className="page-title mb-5 break-words">Welcome, {session.user?.name}</h2>

@@ -14,6 +14,11 @@ enum UserRole {
   ADMIN
 }
 
+enum TokenPurpose {
+  PASSWORD_RESET
+  EMAIL_VERIFICATION
+}
+
 enum ShippingMethod {
   STANDARD
   EXPRESS
@@ -38,11 +43,16 @@ model User {
   password      String
   name          String
   role          UserRole  @default(USER)
+  emailVerifiedAt   DateTime?
+  failedLogins      Int       @default(0)
+  lastFailedLoginAt DateTime?
+  lockedUntil       DateTime?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   orders        Order[]
   cartItems     CartItem[]
   addresses     Address[]
+  authTokens    AuthToken[]
 
   @@index([email])
   @@map("users")
@@ -196,4 +206,35 @@ model Address {
 
   @@index([userId])
   @@map("addresses")
+}
+
+// One-time links for password reset and email verification. Only the hash of
+// the token is stored; the token itself exists in the email only.
+model AuthToken {
+  id        Int          @id @default(autoincrement())
+  userId    Int
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  purpose   TokenPurpose
+  tokenHash String       @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime     @default(now())
+
+  @@index([userId, purpose])
+  @@map("auth_tokens")
+}
+
+// Every email the app sends is recorded here first, then handed to SMTP when
+// SMTP_HOST is set. Tests read it through /api/test/emails.
+model EmailOutbox {
+  id        Int       @id @default(autoincrement())
+  to        String
+  subject   String
+  body      String    @db.Text
+  createdAt DateTime  @default(now())
+  sentAt    DateTime?
+  error     String?
+
+  @@index([to])
+  @@map("email_outbox")
 }

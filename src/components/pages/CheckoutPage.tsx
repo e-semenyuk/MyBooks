@@ -6,6 +6,7 @@ import { ArrowRightIcon } from '@/components/icons'
 import { SHIPPING_OPTIONS, SHIPPING_METHODS, ShippingMethodName } from '@/lib/pricing'
 import { formatMoney, toCents } from '@/lib/money'
 import { formatAddress } from '@/lib/address'
+import VerifyEmailBanner from '@/components/VerifyEmailBanner'
 import type { SavedAddress } from '@/components/AddressBook'
 
 interface CheckoutPageProps {
@@ -38,6 +39,7 @@ export default function CheckoutPage({ showToast, updateCartCount, navigateTo }:
   const [promoError, setPromoError] = useState<string | null>(null)
   const [quote, setQuote] = useState<Quote | null>(null)
   const [cartEmpty, setCartEmpty] = useState(false)
+  const [emailVerified, setEmailVerified] = useState(true)
   const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>([])
 
   // Pre-fill form with user data if logged in
@@ -171,6 +173,8 @@ export default function CheckoutPage({ showToast, updateCartCount, navigateTo }:
         <h2 className="page-title mb-4">Checkout</h2>
         <p className="text-lg text-ink-600">Enter the delivery details for your order.</p>
       </div>
+
+      <VerifyEmailBanner showToast={showToast} onStatus={setEmailVerified} />
 
       <form data-testid="checkout-form" onSubmit={handleSubmit} className="grid items-start gap-12 lg:grid-cols-3">
         <div className="space-y-8 border-t-2 border-ink-950 pt-8 lg:col-span-2">
@@ -346,7 +350,7 @@ export default function CheckoutPage({ showToast, updateCartCount, navigateTo }:
             <button
               data-testid="place-order-button"
               type="submit"
-              disabled={submitting || cartEmpty}
+              disabled={submitting || cartEmpty || !emailVerified}
               className="btn btn-primary flex-1 justify-between"
             >
               {submitting ? 'Placing Order...' : 'Place Order'}

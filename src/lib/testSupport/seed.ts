@@ -87,7 +87,7 @@ export const SEED_PROMOS = [
 
 export async function clearAllData(prisma: PrismaClient): Promise<void> {
   await prisma.$executeRawUnsafe(
-    'TRUNCATE TABLE "order_events", "order_items", "orders", "cart_items", "book_categories", "categories", "promo_codes", "Book", "users" RESTART IDENTITY CASCADE'
+    'TRUNCATE TABLE "email_outbox", "order_events", "order_items", "orders", "cart_items", "book_categories", "categories", "promo_codes", "Book", "users" RESTART IDENTITY CASCADE'
   )
 }
 
@@ -118,12 +118,13 @@ export async function resetAndSeed(
     })
   }
 
-  const users: { email: string; password: string; name: string; role: 'ADMIN' | 'USER' }[] = [
+  const users: { email: string; password: string; name: string; role: 'ADMIN' | 'USER'; emailVerifiedAt: Date }[] = [
     {
       email: accounts.adminEmail.toLowerCase(),
       password: await bcrypt.hash(accounts.adminPassword, 10),
       name: 'Admin',
       role: 'ADMIN',
+      emailVerifiedAt: new Date(),
     },
   ]
   if (accounts.userEmail && accounts.userPassword) {
@@ -132,6 +133,7 @@ export async function resetAndSeed(
       password: await bcrypt.hash(accounts.userPassword, 10),
       name: 'Test User',
       role: 'USER',
+      emailVerifiedAt: new Date(),
     })
   }
   await prisma.user.createMany({ data: users })

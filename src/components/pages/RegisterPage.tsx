@@ -42,7 +42,7 @@ export default function RegisterPage({ showToast, onRegisterSuccess, onSwitchToL
       const data = await response.json()
 
       if (response.ok) {
-        showToast('Registration successful! Please log in.', 'success')
+        showToast('Registration successful! Please log in. We sent you an email to verify your address.', 'success')
         onRegisterSuccess()
       } else {
         showToast(data.error || 'Registration failed', 'error')

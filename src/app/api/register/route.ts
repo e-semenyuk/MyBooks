@@ -3,6 +3,8 @@ import { prisma } from '@/lib/prisma'
 import { handle, json, parseBody } from '@/lib/api/handler'
 import { ApiError } from '@/lib/api/errors'
 import { registerSchema } from '@/lib/validation/schemas'
+import { AccountService } from '@/lib/services/accountService'
+import { emailVerificationRequired } from '@/lib/config'
 import { clientIp, rateLimitingEnabled, registerLimiter } from '@/lib/rateLimit'
 
 export const POST = handle(async (request) => {
@@ -28,9 +30,21 @@ export const POST = handle(async (request) => {
   const hashedPassword = await bcrypt.hash(password, 10)
 
   const user = await prisma.user.create({
-    data: { email, password: hashedPassword, name, role: 'USER' },
+    // Without a way to send the link, an account is trusted from the start
+    data: {
+      email,
+      password: hashedPassword,
+      name,
+      role: 'USER',
+      ...(emailVerificationRequired() ? {} : { emailVerifiedAt: new Date() }),
+    },
     select: { id: true, email: true, name: true, role: true, createdAt: true },
   })
+
+  // The account works right away; ordering needs the confirmed email
+  if (emailVerificationRequired()) {
+    await AccountService.sendVerification({ id: user.id, email: user.email, name: user.name })
+  }
 
   return json({ message: 'User registered successfully', user }, 201)
 })

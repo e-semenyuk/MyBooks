@@ -1641,6 +1641,16 @@
                 }
               }
             }
+          },
+          "403": {
+            "description": "EMAIL_NOT_VERIFIED: confirm the email address first",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
           }
         },
         "operationId": "createOrder"
@@ -1932,7 +1942,7 @@
         "tags": [
           "Accounts"
         ],
-        "summary": "Create an account (role USER). Email is stored in lowercase.",
+        "summary": "Create an account (role USER). Email is stored in lowercase. A verification email is sent; ordering needs the address to be confirmed.",
         "requestBody": {
           "required": true,
           "content": {
@@ -2014,6 +2024,404 @@
           }
         },
         "operationId": "register",
+        "security": []
+      }
+    },
+    "/api/account/me": {
+      "get": {
+        "tags": [
+          "Accounts"
+        ],
+        "summary": "The signed-in user and whether the email address is verified",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Account",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "integer"
+                    },
+                    "email": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "role": {
+                      "type": "string",
+                      "enum": [
+                        "USER",
+                        "ADMIN"
+                      ]
+                    },
+                    "emailVerified": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in (code UNAUTHORIZED)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "getAccount"
+      }
+    },
+    "/api/account/forgot-password": {
+      "post": {
+        "tags": [
+          "Accounts"
+        ],
+        "summary": "Email a password reset link. The answer is the same whether or not the address has an account.",
+        "description": "The link works once and expires after 30 minutes. A new request replaces the previous link. Limited to 5 requests per hour per address and client.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "maxLength": 254,
+                    "format": "email"
+                  }
+                },
+                "required": [
+                  "email"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Always the same message",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_ERROR",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RATE_LIMITED (Retry-After header)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "forgotPassword",
+        "security": []
+      }
+    },
+    "/api/account/reset-password": {
+      "post": {
+        "tags": [
+          "Accounts"
+        ],
+        "summary": "Set a new password with the emailed token. Also clears a login lock and confirms the email address.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "token": {
+                    "type": "string",
+                    "minLength": 20,
+                    "maxLength": 200
+                  },
+                  "password": {
+                    "type": "string",
+                    "minLength": 8,
+                    "maxLength": 72,
+                    "allOf": [
+                      {
+                        "pattern": "[A-Za-z]"
+                      },
+                      {
+                        "pattern": "[0-9]"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "token",
+                  "password"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Password changed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_ERROR, TOKEN_INVALID (unknown or already used) or TOKEN_EXPIRED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "resetPassword",
+        "security": []
+      }
+    },
+    "/api/account/verify-email": {
+      "post": {
+        "tags": [
+          "Accounts"
+        ],
+        "summary": "Confirm the email address with the emailed token (valid for 24 hours)",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "token": {
+                    "type": "string",
+                    "minLength": 20,
+                    "maxLength": 200
+                  }
+                },
+                "required": [
+                  "token"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Verified",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_ERROR, TOKEN_INVALID or TOKEN_EXPIRED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "verifyEmail",
+        "security": []
+      }
+    },
+    "/api/account/resend-verification": {
+      "post": {
+        "tags": [
+          "Accounts"
+        ],
+        "summary": "Send the verification email again (3 per hour)",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sent",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in (code UNAUTHORIZED)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "ALREADY_VERIFIED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RATE_LIMITED (Retry-After header)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "resendVerification"
+      }
+    },
+    "/api/test/emails": {
+      "get": {
+        "tags": [
+          "Test support"
+        ],
+        "summary": "The latest emails the app sent, newest first (reset and verification links are in the body)",
+        "parameters": [
+          {
+            "name": "x-test-secret",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Only emails to this address"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Up to 20 emails",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "integer"
+                      },
+                      "to": {
+                        "type": "string"
+                      },
+                      "subject": {
+                        "type": "string"
+                      },
+                      "body": {
+                        "type": "string"
+                      },
+                      "createdAt": {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      "sentAt": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "error": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Disabled or wrong secret",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "listTestEmails",
         "security": []
       }
     },

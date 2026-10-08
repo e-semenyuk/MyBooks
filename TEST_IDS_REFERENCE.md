@@ -288,6 +288,33 @@ An unknown or non-numeric id shows the not-found page (`not-found-page`).
 
 At most 10 addresses per user. Another user's address answers 404.
 
+## Account security pages
+
+Emails (verification and reset links) are readable in tests through `GET /api/test/emails?to=<address>` with the `x-test-secret` header. The token is the `token` query parameter of the link in the body.
+
+| Test ID | Element | Description |
+|---------|---------|-------------|
+| `forgot-password-link` | `<a>` | On the login page |
+| `forgot-password-page` | `<div>` | `/forgot-password` |
+| `forgot-password-form` | `<form>` | Request form |
+| `forgot-password-email-input` | `<input>` | Email |
+| `forgot-password-submit-button` | `<button>` | Send reset link |
+| `forgot-password-success` | `<div>` | Same message for known and unknown addresses |
+| `forgot-password-back-button` | `<button>` | Back to sign in |
+| `reset-password-page` | `<div>` | `/reset-password?token=...` |
+| `reset-password-form` | `<form>` | New password form |
+| `reset-password-input` / `reset-password-confirm-input` | `<input>` | New password twice |
+| `reset-password-submit-button` | `<button>` | Change password |
+| `reset-password-error` | `<div>` | Link not valid, already used or expired |
+| `reset-password-request-new-button` | `<button>` | Go to `/forgot-password` |
+| `verify-email-page` | `<div>` | `/verify-email?token=...` |
+| `verify-email-status` | `<div>` | Checking, verified or failed message |
+| `verify-email-continue-button` | `<button>` | Go home |
+| `verify-email-banner` | `<div>` | On checkout and profile while the address is not verified |
+| `resend-verification-button` | `<button>` | Send the email again |
+
+Rules: a new account is unverified and cannot place orders (API answers 403 `EMAIL_NOT_VERIFIED`); a reset link works once and expires after 30 minutes; a verification link expires after 24 hours; a new link replaces the previous one; five wrong passwords within ten minutes lock the account for 15 minutes (the right password is refused too), and a successful reset lifts the lock. Seeded users are already verified.
+
 ## Usage Examples
 
 ### Cypress/Playwright Tests

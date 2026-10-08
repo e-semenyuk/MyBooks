@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import { signIn } from 'next-auth/react'
 import AuthLayout from '@/components/AuthLayout'
 import { ArrowRightIcon } from '@/components/icons'
@@ -70,9 +71,18 @@ export default function LoginPage({ showToast, onLoginSuccess, onSwitchToRegiste
         </div>
 
         <div>
-          <label htmlFor="password" className="label">
-            Password
-          </label>
+          <div className="flex items-baseline justify-between">
+            <label htmlFor="password" className="label">
+              Password
+            </label>
+            <Link
+              data-testid="forgot-password-link"
+              href="/forgot-password"
+              className="mb-1.5 text-xs font-semibold text-cobalt-500 underline underline-offset-4 hover:text-cobalt-700"
+            >
+              Forgot password?
+            </Link>
+          </div>
           <input
             data-testid="login-password-input"
             id="password"

@@ -1,6 +1,8 @@
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { ApiError } from './errors'
+import { prisma } from '@/lib/prisma'
+import { emailVerificationRequired } from '@/lib/config'
 
 export interface SessionUser {
   id: number
@@ -27,5 +29,16 @@ export async function requireUser(): Promise<SessionUser> {
 export async function requireAdminUser(): Promise<SessionUser> {
   const user = await requireUser()
   if (user.role !== 'ADMIN') throw ApiError.forbidden()
+  return user
+}
+
+// Placing an order needs a confirmed email address.
+export async function requireVerifiedUser(): Promise<SessionUser> {
+  const user = await requireUser()
+  if (!emailVerificationRequired()) return user
+  const row = await prisma.user.findUnique({ where: { id: user.id }, select: { emailVerifiedAt: true } })
+  if (!row?.emailVerifiedAt) {
+    throw new ApiError(403, 'EMAIL_NOT_VERIFIED', 'Verify your email address to place orders')
+  }
   return user
 }
