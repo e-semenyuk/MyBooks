@@ -155,7 +155,7 @@ export default function CartPage({ showToast, updateCartCount, navigateTo }: Car
                 <div className="min-w-0 flex-1">
                   <div className="flex items-start justify-between gap-4">
                     <div className="min-w-0">
-                      <h3 className="line-clamp-2 font-serif text-lg font-semibold leading-snug text-ink-900">
+                      <h3 className="line-clamp-2 font-display text-lg font-semibold leading-snug text-ink-900">
                         {item.book.title}
                       </h3>
                       <p className="text-sm text-stone-600">{item.book.author}</p>
@@ -220,7 +220,7 @@ export default function CartPage({ showToast, updateCartCount, navigateTo }: Car
               </div>
               <div className="flex items-baseline justify-between border-t border-stone-200 pt-4">
                 <dt className="font-medium text-ink-900">Total</dt>
-                <dd data-testid="cart-total" className="num font-serif text-3xl font-semibold text-ink-900">
+                <dd data-testid="cart-total" className="num font-display text-3xl font-semibold text-ink-900">
                   ${total.toFixed(2)}
                 </dd>
               </div>

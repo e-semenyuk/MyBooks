@@ -73,7 +73,7 @@ export default function ProfilePage({ showToast }: ProfilePageProps) {
       <div data-testid="profile-header" className="mb-10 flex items-center gap-6 border-b border-stone-200 pb-8">
         <div
           aria-hidden="true"
-          className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-ink-900 font-serif text-3xl font-semibold text-white"
+          className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-ink-900 font-display text-3xl font-semibold text-white"
         >
           {initial}
         </div>
@@ -91,7 +91,7 @@ export default function ProfilePage({ showToast }: ProfilePageProps) {
 
       <div data-testid="order-history-section">
         <div className="mb-6 flex items-baseline justify-between">
-          <h3 className="font-serif text-2xl font-semibold tracking-tight text-ink-900">Order History</h3>
+          <h3 className="font-display text-2xl font-semibold tracking-tight text-ink-900">Order History</h3>
           <span className="num text-sm text-stone-600">
             {orders.length} {orders.length === 1 ? 'Order' : 'Orders'}
           </span>
@@ -122,7 +122,7 @@ export default function ProfilePage({ showToast }: ProfilePageProps) {
                 <div className="flex flex-wrap items-start justify-between gap-4 border-b border-stone-200 p-5">
                   <div>
                     <div className="mb-1 flex items-center gap-3">
-                      <h4 className="font-serif text-lg font-semibold text-ink-900">Order #{order.id}</h4>
+                      <h4 className="font-display text-lg font-semibold text-ink-900">Order #{order.id}</h4>
                       <span className={`badge ${getStatusColor(order.status)}`}>{order.status}</span>
                     </div>
                     <p className="text-sm text-stone-600">
@@ -135,7 +135,7 @@ export default function ProfilePage({ showToast }: ProfilePageProps) {
                   </div>
                   <div className="text-right">
                     <p className="section-label mb-1">Total</p>
-                    <p className="num font-serif text-2xl font-semibold text-ink-900">
+                    <p className="num font-display text-2xl font-semibold text-ink-900">
                       ${order.totalAmount.toFixed(2)}
                     </p>
                   </div>

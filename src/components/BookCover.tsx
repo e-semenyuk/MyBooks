@@ -27,7 +27,7 @@ export default function BookCover({ id, title, size = 'md', className = '' }: Bo
     >
       <span className={`block bg-brass-500 ${small ? 'h-px w-5' : 'h-px w-10'}`} />
       <span
-        className={`font-serif font-semibold leading-none text-white/90 ${
+        className={`font-display font-semibold leading-none text-white/90 ${
           small ? 'text-2xl' : 'text-5xl'
         }`}
       >

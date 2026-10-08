@@ -135,7 +135,7 @@ export default function HomePage({ showToast, updateCartCount }: HomePageProps) 
       ) : (
         <>
           <div className="mb-6 flex items-baseline justify-between">
-            <h3 data-testid="books-count" className="font-serif text-2xl font-semibold tracking-tight text-ink-900">
+            <h3 data-testid="books-count" className="font-display text-2xl font-semibold tracking-tight text-ink-900">
               {searchQuery ? `Search Results (${books.length})` : `All Books (${books.length})`}
             </h3>
             {searchQuery && (

@@ -11,9 +11,9 @@ function Svg({ children, className = 'h-5 w-5', ...rest }: IconProps) {
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      strokeWidth={1.5}
-      strokeLinecap="round"
-      strokeLinejoin="round"
+      strokeWidth={1.75}
+      strokeLinecap="square"
+      strokeLinejoin="miter"
       aria-hidden={rest['aria-label'] ? undefined : true}
       className={className}
       {...rest}

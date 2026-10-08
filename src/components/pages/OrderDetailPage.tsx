@@ -113,7 +113,7 @@ export default function OrderDetailPage({ orderId, showToast }: OrderDetailPageP
                   className="flex items-start justify-between gap-4 p-5"
                 >
                   <div className="min-w-0">
-                    <p className="font-serif text-lg font-semibold leading-snug text-ink-900">
+                    <p className="font-display text-lg font-semibold leading-snug text-ink-900">
                       {item.book?.title ?? 'Unknown'}
                     </p>
                     <p className="text-sm text-stone-600">{item.book?.author ?? 'Unknown'}</p>
@@ -128,7 +128,7 @@ export default function OrderDetailPage({ orderId, showToast }: OrderDetailPageP
               ))}
               <div className="flex items-baseline justify-between bg-stone-50 p-5">
                 <span className="font-medium text-ink-900">Total</span>
-                <span data-testid="order-detail-total" className="num font-serif text-3xl font-semibold text-ink-900">
+                <span data-testid="order-detail-total" className="num font-display text-3xl font-semibold text-ink-900">
                   ${order.totalAmount.toFixed(2)}
                 </span>
               </div>

@@ -336,14 +336,14 @@ export default function AdminPage({ showToast }: AdminPageProps) {
                     className="flex items-start justify-between gap-4 p-5"
                   >
                     <div className="min-w-0 flex-1">
-                      <h4 className="font-serif text-lg font-semibold leading-snug text-ink-900">{book.title}</h4>
+                      <h4 className="font-display text-lg font-semibold leading-snug text-ink-900">{book.title}</h4>
                       <p className="text-sm text-stone-600">by {book.author}</p>
                       {book.isbn && <p className="mt-1 font-mono text-xs text-stone-500">ISBN {book.isbn}</p>}
                       {book.description && (
                         <p className="mt-2 line-clamp-2 text-sm text-stone-600">{book.description}</p>
                       )}
                       <div className="mt-3 flex items-center gap-4">
-                        <span className="num font-serif text-xl font-semibold text-ink-900">
+                        <span className="num font-display text-xl font-semibold text-ink-900">
                           ${book.price.toFixed(2)}
                         </span>
                         <span
@@ -405,7 +405,7 @@ export default function AdminPage({ showToast }: AdminPageProps) {
                 >
                   <div className="flex flex-wrap items-start justify-between gap-4 border-b border-stone-200 p-5">
                     <div>
-                      <h4 className="font-serif text-lg font-semibold text-ink-900">Order #{order.id}</h4>
+                      <h4 className="font-display text-lg font-semibold text-ink-900">Order #{order.id}</h4>
                       <p className="text-sm text-stone-600">
                         {order.customerName}, {order.customerEmail}
                       </p>
@@ -414,7 +414,7 @@ export default function AdminPage({ showToast }: AdminPageProps) {
                       </p>
                     </div>
                     <div className="text-right">
-                      <p className="num font-serif text-2xl font-semibold text-ink-900">
+                      <p className="num font-display text-2xl font-semibold text-ink-900">
                         ${order.totalAmount.toFixed(2)}
                       </p>
                       <label htmlFor={`status-${order.id}`} className="sr-only">

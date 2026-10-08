@@ -30,7 +30,7 @@ export default function BookCard({ book, onAddToCart }: BookCardProps) {
 
         <h3
           data-testid={`book-title-${book.id}`}
-          className="mb-1 line-clamp-2 font-serif text-xl font-semibold leading-snug tracking-tight text-ink-900"
+          className="mb-1 line-clamp-2 font-display text-xl font-semibold leading-snug tracking-tight text-ink-900"
         >
           {book.title}
         </h3>
@@ -52,7 +52,7 @@ export default function BookCard({ book, onAddToCart }: BookCardProps) {
               <p className="section-label mb-1">Price</p>
               <p
                 data-testid={`book-price-${book.id}`}
-                className="num font-serif text-2xl font-semibold text-ink-900"
+                className="num font-display text-2xl font-semibold text-ink-900"
               >
                 ${book.price.toFixed(2)}
               </p>

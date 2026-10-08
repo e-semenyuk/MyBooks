@@ -33,11 +33,11 @@ export default function Navigation({ cartCount }: NavigationProps) {
         >
           <span
             aria-hidden="true"
-            className="flex h-8 w-8 items-center justify-center rounded-sm bg-brass-500 font-serif text-lg font-semibold text-ink-950"
+            className="flex h-8 w-8 items-center justify-center rounded-sm bg-brass-500 font-display text-lg font-semibold text-ink-950"
           >
             D
           </span>
-          <span className="hidden font-serif text-lg font-semibold tracking-tight sm:block">
+          <span className="hidden font-display text-lg font-semibold tracking-tight sm:block">
             Digital Bookstore
           </span>
         </button>
