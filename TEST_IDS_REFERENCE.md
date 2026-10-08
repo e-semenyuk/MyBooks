@@ -137,6 +137,50 @@ This document provides a comprehensive list of all `data-testid` attributes used
 | `profile-no-orders` | `<div>` | No orders message |
 | `profile-orders-list` | `<div>` | Orders list container |
 | `profile-order-item-{id}` | `<div>` | Order item (dynamic ID) |
+| `profile-order-view-{id}` | `<a>` | Link from the order list to `/orders/{id}` |
+
+## OrderDetailPage (`/orders/{id}`)
+
+| Test ID | Element | Description |
+|---------|---------|-------------|
+| `order-detail-page` | `<div>` | Page container |
+| `order-detail-loading` | `<div>` | Loading state |
+| `order-detail-not-found` | `<div>` | Shown for unknown orders and orders of other users |
+| `order-detail-back-button` | `<a>` | Back to the profile |
+| `order-detail-title` | `<h2>` | "Order #id" |
+| `order-detail-status` | `<span>` | Current status (PENDING, CONFIRMED, SHIPPED, DELIVERED, CANCELLED) |
+| `order-detail-customer` | `<p>` | Customer name and email |
+| `order-detail-address` | `<p>` | Delivery address |
+| `order-detail-items` | `<div>` | Items container |
+| `order-detail-item-{bookId}` | `<div>` | One order line |
+| `order-detail-history` | `<div>` | Status history container |
+| `order-detail-history-{eventId}` | `<li>` | One status change |
+| `order-detail-total` | `<span>` | Order total |
+
+## Error and not-found pages
+
+| Test ID | Element | Description |
+|---------|---------|-------------|
+| `not-found-page` | `<div>` | Unknown URL |
+| `not-found-home-link` | `<a>` | Link back to the store |
+| `error-page` | `<div>` | Unexpected error screen |
+| `error-retry-button` | `<button>` | Try again |
+| `page-loading` | `<div>` | Route loading state |
+
+## Routes
+
+| Path | Page | Access |
+|------|------|--------|
+| `/` | HomePage | public |
+| `/cart` | CartPage | public |
+| `/checkout` | CheckoutPage | public |
+| `/login` (`?callbackUrl=/path`) | LoginPage | public |
+| `/register` | RegisterPage | public |
+| `/profile` | ProfilePage | signed in |
+| `/orders/{id}` | OrderDetailPage | signed in, owner or admin |
+| `/admin` | AdminPage | admin (others are sent to `/`) |
+
+Guests opening a private page are redirected to `/login?callbackUrl=<page>` and return there after signing in.
 
 ## Usage Examples
 
@@ -155,8 +199,8 @@ cy.get('[data-testid="search-submit-button"]').click()
 
 // Login
 cy.get('[data-testid="nav-login-button"]').click()
-cy.get('[data-testid="login-email-input"]').type('admin@bookstore.com')
-cy.get('[data-testid="login-password-input"]').type('admin123')
+cy.get('[data-testid="login-email-input"]').type(Cypress.env('ADMIN_EMAIL'))
+cy.get('[data-testid="login-password-input"]').type(Cypress.env('ADMIN_PASSWORD'))
 cy.get('[data-testid="login-submit-button"]').click()
 
 // Admin - Add book

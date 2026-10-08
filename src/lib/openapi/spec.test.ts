@@ -1,0 +1,30 @@
+import { readFileSync } from 'fs'
+import { resolve } from 'path'
+import { describe, expect, it } from 'vitest'
+import { buildOpenApi } from './spec'
+
+describe('OpenAPI document', () => {
+  it('matches docs/openapi.json (run "npm run openapi" after API changes)', () => {
+    const committed = JSON.parse(readFileSync(resolve(__dirname, '../../../docs/openapi.json'), 'utf8'))
+    expect(committed).toEqual(JSON.parse(JSON.stringify(buildOpenApi())))
+  })
+
+  it('describes every API route folder', () => {
+    const paths = Object.keys(buildOpenApi().paths)
+    for (const path of [
+      '/api/health', '/api/books', '/api/books/{id}', '/api/cart', '/api/cart/{id}', '/api/cart/total',
+      '/api/cart/merge', '/api/orders', '/api/orders/{id}', '/api/register', '/api/test/reset', '/api/test/seed',
+    ]) {
+      expect(paths).toContain(path)
+    }
+  })
+
+  it('takes request bodies from the validators', () => {
+    const doc = buildOpenApi()
+    const book = doc.paths['/api/books'].post.requestBody.content['application/json'].schema
+    expect(book.required).toEqual(['title', 'author', 'price', 'stockQuantity'])
+    expect(book.properties.price.minimum).toBe(0)
+    const order = doc.paths['/api/orders'].post.requestBody.content['application/json'].schema
+    expect(order.properties.customerEmail.format).toBe('email')
+  })
+})

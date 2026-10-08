@@ -1,13 +1,14 @@
 import bcrypt from 'bcryptjs'
 
+// Usage: npx tsx scripts/hash-password.ts <password>
 async function hashPassword() {
-  const password = process.argv[2] || 'admin123'
+  const password = process.argv[2]
+  if (!password) {
+    console.error('Usage: npx tsx scripts/hash-password.ts <password>')
+    process.exit(1)
+  }
   const hashedPassword = await bcrypt.hash(password, 10)
-  console.log('\n✅ Password hashed successfully!')
-  console.log(`\nOriginal: ${password}`)
-  console.log(`Hashed:   ${hashedPassword}`)
-  console.log('\nUse this hashed password in your SQL file.\n')
+  console.log(hashedPassword)
 }
 
 hashPassword()
-

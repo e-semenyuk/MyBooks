@@ -67,7 +67,7 @@ export default function LoginPage({ showToast, onLoginSuccess, onSwitchToRegiste
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 className="input"
-                placeholder="admin@bookstore.com"
+                placeholder="you@example.com"
               />
             </div>
 
@@ -120,15 +120,6 @@ export default function LoginPage({ showToast, onLoginSuccess, onSwitchToRegiste
                 Register here
               </button>
             </p>
-          </div>
-
-          <div className="mt-6 pt-6 border-t border-gray-200">
-            <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
-              <p className="text-sm font-semibold text-blue-900 mb-2">🎯 Demo Credentials:</p>
-              <p className="text-xs text-blue-800 font-mono">
-                <strong>Admin:</strong> admin@bookstore.com / admin123
-              </p>
-            </div>
           </div>
         </div>
       </div>

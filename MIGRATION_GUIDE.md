@@ -1,5 +1,7 @@
 # Migration Guide: Java Spring Boot → Next.js
 
+> Historical note: this describes the move from the original Java application. For the current setup see README.md.
+
 This document explains the migration from the Java Spring Boot application to Next.js.
 
 ## Architecture Comparison
