@@ -1,94 +1,32 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { OrderService, OrderNotFoundError } from '@/lib/services/orderService'
-import { InvalidStatusError, InvalidTransitionError } from '@/lib/orderStatus'
-import { requireAdmin, requireAuth } from '@/lib/auth-helpers'
+import { OrderService } from '@/lib/services/orderService'
+import { handle, json, parseBody, parseId } from '@/lib/api/handler'
+import { ApiError } from '@/lib/api/errors'
+import { requireAdminUser, requireUser } from '@/lib/api/guards'
+import { updateOrderStatusSchema } from '@/lib/validation/schemas'
 
-// GET /api/orders/:id - Get an order by ID
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const { error: authError, session } = await requireAuth()
-  if (authError) return authError
+export const dynamic = 'force-dynamic'
 
-  try {
-    const { id } = await params
-    const orderId = parseInt(id)
+// GET /api/orders/:id - Get an order by ID (owner or admin)
+export const GET = handle(async (_request, context) => {
+  const user = await requireUser()
+  const orderId = await parseId(context, 'order ID')
 
-    if (isNaN(orderId)) {
-      return NextResponse.json(
-        { error: 'Invalid order ID' },
-        { status: 400 }
-      )
-    }
+  const order = await OrderService.getOrderById(orderId)
+  const isOwner = order?.userId != null && order.userId === user.id
 
-    const order = await OrderService.getOrderById(orderId)
-    const user = session!.user as any
-    const isOwner = order?.userId != null && String(order.userId) === String(user.id)
-
-    // Return 404 for foreign orders so order IDs cannot be probed
-    if (!order || (user.role !== 'ADMIN' && !isOwner)) {
-      return NextResponse.json(
-        { error: 'Order not found' },
-        { status: 404 }
-      )
-    }
-
-    return NextResponse.json(order)
-  } catch (error) {
-    console.error('Error fetching order:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch order' },
-      { status: 500 }
-    )
+  // 404 for foreign orders so order IDs cannot be probed
+  if (!order || (user.role !== 'ADMIN' && !isOwner)) {
+    throw ApiError.notFound('Order not found', 'ORDER_NOT_FOUND')
   }
-}
+
+  return json(order)
+})
 
 // PATCH /api/orders/:id - Update order status (admin only)
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const { error } = await requireAdmin()
-  if (error) return error
+export const PATCH = handle(async (request, context) => {
+  await requireAdminUser()
+  const orderId = await parseId(context, 'order ID')
+  const { status } = await parseBody(request, updateOrderStatusSchema)
 
-  try {
-    const { id } = await params
-    const orderId = parseInt(id)
-    const body = await request.json()
-
-    if (isNaN(orderId)) {
-      return NextResponse.json(
-        { error: 'Invalid order ID' },
-        { status: 400 }
-      )
-    }
-
-    if (!body.status) {
-      return NextResponse.json(
-        { error: 'Status is required' },
-        { status: 400 }
-      )
-    }
-
-    const order = await OrderService.updateOrderStatus(orderId, body.status)
-
-    return NextResponse.json(order)
-  } catch (error) {
-    if (error instanceof InvalidStatusError) {
-      return NextResponse.json({ error: error.message, code: error.code }, { status: 400 })
-    }
-    if (error instanceof OrderNotFoundError) {
-      return NextResponse.json({ error: 'Order not found', code: error.code }, { status: 404 })
-    }
-    if (error instanceof InvalidTransitionError) {
-      return NextResponse.json({ error: error.message, code: error.code }, { status: 409 })
-    }
-    console.error('Error updating order:', error)
-    return NextResponse.json(
-      { error: 'Failed to update order' },
-      { status: 500 }
-    )
-  }
-}
-
+  return json(await OrderService.updateOrderStatus(orderId, status))
+})

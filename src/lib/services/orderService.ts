@@ -21,6 +21,11 @@ export class OrderNotFoundError extends Error {
   }
 }
 
+// The cart cannot be turned into an order (empty, missing book, not enough stock).
+export class OrderRejectedError extends Error {
+  readonly code = 'ORDER_REJECTED'
+}
+
 export class OrderService {
   static async createOrder(
     sessionId: string,
@@ -30,7 +35,7 @@ export class OrderService {
     const cartItems = await CartService.getCartItems(sessionId)
 
     if (cartItems.length === 0) {
-      throw new Error('Cart is empty')
+      throw new OrderRejectedError('Cart is empty')
     }
 
     // One query for every book in the cart
@@ -42,11 +47,11 @@ export class OrderService {
       const book = books.get(cartItem.bookId)
 
       if (!book) {
-        throw new Error(`Book not found with ID: ${cartItem.bookId}`)
+        throw new OrderRejectedError(`Book not found with ID: ${cartItem.bookId}`)
       }
 
       if (book.stockQuantity < cartItem.quantity) {
-        throw new Error(`Insufficient stock for book: ${book.title}`)
+        throw new OrderRejectedError(`Insufficient stock for book: ${book.title}`)
       }
 
       totalCents += book.priceCents * cartItem.quantity
@@ -84,7 +89,7 @@ export class OrderService {
         })
 
         if (updated.count === 0) {
-          throw new Error(`Insufficient stock for book: ${book.title}`)
+          throw new OrderRejectedError(`Insufficient stock for book: ${book.title}`)
         }
       }
 

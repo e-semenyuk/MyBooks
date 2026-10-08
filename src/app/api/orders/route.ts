@@ -1,88 +1,46 @@
-import { NextRequest, NextResponse } from 'next/server'
 import { OrderService } from '@/lib/services/orderService'
 import { getOrCreateSessionId } from '@/lib/session'
-import { CreateOrderRequest } from '@/types'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
-import { requireAdmin } from '@/lib/auth-helpers'
+import { handle, json, parseBody } from '@/lib/api/handler'
+import { ApiError } from '@/lib/api/errors'
+import { getOptionalUser } from '@/lib/api/guards'
 import { isOrderStatus } from '@/lib/orderStatus'
+import { createOrderSchema, orderFilterSchema } from '@/lib/validation/schemas'
 
-// GET /api/orders - Get all orders (admin only) or user's orders
-export async function GET(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions)
-    const searchParams = request.nextUrl.searchParams
-    const email = searchParams.get('email')
-    const status = searchParams.get('status')
-    const userId = searchParams.get('userId')
+export const dynamic = 'force-dynamic'
 
-    let orders: any[] = []
+// GET /api/orders - Admins list all orders (with filters); users see only their own
+export const GET = handle(async (request) => {
+  const user = await getOptionalUser()
 
-    // If user is logged in but not admin, only return their orders
-    if (session && (session.user as any).role !== 'ADMIN') {
-      const userEmail = session.user?.email
-      orders = await OrderService.getOrdersByCustomerEmail(userEmail!)
-    } 
-    // Admin can query by email, status, userId, or get all
-    else if (session && (session.user as any).role === 'ADMIN') {
-      if (email) {
-        orders = await OrderService.getOrdersByCustomerEmail(email)
-      } else if (status) {
-        if (!isOrderStatus(status)) {
-          return NextResponse.json(
-            { error: `Invalid order status: ${status}`, code: 'INVALID_STATUS' },
-            { status: 400 }
-          )
-        }
-        orders = await OrderService.getOrdersByStatus(status)
-      } else if (userId) {
-        orders = await OrderService.getOrdersByUserId(parseInt(userId))
-      } else {
-        orders = await OrderService.getAllOrders()
-      }
-    }
-    // Not logged in - no orders
-    else {
-      orders = []
-    }
+  // Not signed in: no orders
+  if (!user) return json([])
 
-    return NextResponse.json(orders)
-  } catch (error) {
-    console.error('Error fetching orders:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch orders' },
-      { status: 500 }
-    )
+  // Ownership is the user id. Email is never used to find a user's orders.
+  if (user.role !== 'ADMIN') {
+    return json(await OrderService.getOrdersByUserId(user.id))
   }
-}
+
+  const { email, status, userId } = orderFilterSchema.parse(
+    Object.fromEntries(request.nextUrl.searchParams)
+  )
+
+  if (email) return json(await OrderService.getOrdersByCustomerEmail(email))
+  if (status) {
+    if (!isOrderStatus(status)) {
+      throw ApiError.badRequest(`Invalid order status: ${status}`, 'INVALID_STATUS')
+    }
+    return json(await OrderService.getOrdersByStatus(status))
+  }
+  if (userId) return json(await OrderService.getOrdersByUserId(userId))
+  return json(await OrderService.getAllOrders())
+})
 
 // POST /api/orders - Create a new order
-export async function POST(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions)
-    const sessionId = await getOrCreateSessionId()
-    const body: CreateOrderRequest = await request.json()
+export const POST = handle(async (request) => {
+  const user = await getOptionalUser()
+  const sessionId = await getOrCreateSessionId()
+  const body = await parseBody(request, createOrderSchema)
 
-    // Validation
-    if (!body.customerName || !body.customerEmail || !body.customerAddress) {
-      return NextResponse.json(
-        { error: 'Customer name, email, and address are required' },
-        { status: 400 }
-      )
-    }
-
-    // Get userId if user is logged in
-    const userId = session ? parseInt((session.user as any).id) : null
-
-    const order = await OrderService.createOrder(sessionId, body, userId)
-
-    return NextResponse.json(order, { status: 201 })
-  } catch (error: any) {
-    console.error('Error creating order:', error)
-    return NextResponse.json(
-      { error: error.message || 'Failed to create order' },
-      { status: 400 }
-    )
-  }
-}
-
+  const order = await OrderService.createOrder(sessionId, body, user?.id ?? null)
+  return json(order, 201)
+})

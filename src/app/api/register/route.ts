@@ -1,64 +1,26 @@
-import { NextRequest, NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
 import { prisma } from '@/lib/prisma'
+import { handle, json, parseBody } from '@/lib/api/handler'
+import { ApiError } from '@/lib/api/errors'
+import { registerSchema } from '@/lib/validation/schemas'
 
-export async function POST(request: NextRequest) {
-  try {
-    const body = await request.json()
-    const { email, password, name } = body
+export const POST = handle(async (request) => {
+  const { email, password, name } = await parseBody(request, registerSchema)
 
-    if (!email || !password || !name) {
-      return NextResponse.json(
-        { error: 'Email, password, and name are required' },
-        { status: 400 }
-      )
-    }
+  const existingUser = await prisma.user.findFirst({
+    where: { email: { equals: email, mode: 'insensitive' } },
+  })
 
-    // Check if user already exists
-    const existingUser = await prisma.user.findUnique({
-      where: { email },
-    })
-
-    if (existingUser) {
-      return NextResponse.json(
-        { error: 'User with this email already exists' },
-        { status: 400 }
-      )
-    }
-
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 10)
-
-    // Create user
-    const user = await prisma.user.create({
-      data: {
-        email,
-        password: hashedPassword,
-        name,
-        role: 'USER', // Default role
-      },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        role: true,
-        createdAt: true,
-      },
-    })
-
-    return NextResponse.json(
-      { 
-        message: 'User registered successfully',
-        user 
-      },
-      { status: 201 }
-    )
-  } catch (error) {
-    console.error('Registration error:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+  if (existingUser) {
+    throw ApiError.badRequest('User with this email already exists', 'EMAIL_TAKEN')
   }
-}
 
+  const hashedPassword = await bcrypt.hash(password, 10)
+
+  const user = await prisma.user.create({
+    data: { email, password: hashedPassword, name, role: 'USER' },
+    select: { id: true, email: true, name: true, role: true, createdAt: true },
+  })
+
+  return json({ message: 'User registered successfully', user }, 201)
+})

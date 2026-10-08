@@ -1,109 +1,34 @@
-import { NextRequest, NextResponse } from 'next/server'
 import { BookService } from '@/lib/services/bookService'
-import { UpdateBookRequest } from '@/types'
-import { requireAdmin } from '@/lib/auth-helpers'
+import { handle, json, parseBody, parseId } from '@/lib/api/handler'
+import { ApiError } from '@/lib/api/errors'
+import { requireAdminUser } from '@/lib/api/guards'
+import { updateBookSchema } from '@/lib/validation/schemas'
 
 // GET /api/books/:id - Get a book by ID
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const { id } = await params
-    const bookId = parseInt(id)
+export const GET = handle(async (_request, context) => {
+  const bookId = await parseId(context, 'book ID')
+  const book = await BookService.getBookById(bookId)
 
-    if (isNaN(bookId)) {
-      return NextResponse.json(
-        { error: 'Invalid book ID' },
-        { status: 400 }
-      )
-    }
+  if (!book) throw ApiError.notFound('Book not found', 'BOOK_NOT_FOUND')
 
-    const book = await BookService.getBookById(bookId)
+  return json(book)
+})
 
-    if (!book) {
-      return NextResponse.json(
-        { error: 'Book not found' },
-        { status: 404 }
-      )
-    }
+// PUT /api/books/:id - Update a book (admin only)
+export const PUT = handle(async (request, context) => {
+  await requireAdminUser()
+  const bookId = await parseId(context, 'book ID')
+  const body = await parseBody(request, updateBookSchema)
 
-    return NextResponse.json(book)
-  } catch (error) {
-    console.error('Error fetching book:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch book' },
-      { status: 500 }
-    )
-  }
-}
+  const book = await BookService.updateBook(bookId, body)
+  return json(book)
+})
 
-// PUT /api/books/:id - Update a book
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const { error: authError } = await requireAdmin()
-  if (authError) return authError
+// DELETE /api/books/:id - Delete a book (admin only)
+export const DELETE = handle(async (_request, context) => {
+  await requireAdminUser()
+  const bookId = await parseId(context, 'book ID')
 
-  try {
-    const { id } = await params
-    const bookId = parseInt(id)
-
-    if (isNaN(bookId)) {
-      return NextResponse.json(
-        { error: 'Invalid book ID' },
-        { status: 400 }
-      )
-    }
-
-    const body: UpdateBookRequest = await request.json()
-    const book = await BookService.updateBook(bookId, body)
-
-    return NextResponse.json(book)
-  } catch (error) {
-    if (error instanceof RangeError) {
-      return NextResponse.json(
-        { error: error.message, code: 'INVALID_AMOUNT' },
-        { status: 400 }
-      )
-    }
-    console.error('Error updating book:', error)
-    return NextResponse.json(
-      { error: 'Failed to update book' },
-      { status: 500 }
-    )
-  }
-}
-
-// DELETE /api/books/:id - Delete a book
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const { error: authError } = await requireAdmin()
-  if (authError) return authError
-
-  try {
-    const { id } = await params
-    const bookId = parseInt(id)
-
-    if (isNaN(bookId)) {
-      return NextResponse.json(
-        { error: 'Invalid book ID' },
-        { status: 400 }
-      )
-    }
-
-    await BookService.deleteBook(bookId)
-
-    return NextResponse.json({ message: 'Book deleted successfully' })
-  } catch (error) {
-    console.error('Error deleting book:', error)
-    return NextResponse.json(
-      { error: 'Failed to delete book' },
-      { status: 500 }
-    )
-  }
-}
-
+  await BookService.deleteBook(bookId)
+  return json({ message: 'Book deleted successfully' })
+})
