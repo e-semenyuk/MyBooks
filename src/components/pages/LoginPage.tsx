@@ -105,7 +105,7 @@ export default function LoginPage({ showToast, onLoginSuccess, onSwitchToRegiste
 
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-600">
-              Don't have an account?{' '}
+              Don&apos;t have an account?{' '}
               <button
                 data-testid="switch-to-register-button"
                 onClick={onSwitchToRegister}

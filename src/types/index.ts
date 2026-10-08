@@ -22,6 +22,7 @@ export interface CartItem {
 
 export interface Order {
   id: number
+  userId?: number | null
   customerName: string
   customerEmail: string
   customerAddress: string
