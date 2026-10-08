@@ -1,5 +1,5 @@
 import { OrderService } from '@/lib/services/orderService'
-import { getOrCreateSessionId } from '@/lib/session'
+import { getCartOwner } from '@/lib/session'
 import { handle, json, parseBody } from '@/lib/api/handler'
 import { ApiError } from '@/lib/api/errors'
 import { getOptionalUser } from '@/lib/api/guards'
@@ -37,10 +37,9 @@ export const GET = handle(async (request) => {
 
 // POST /api/orders - Create a new order
 export const POST = handle(async (request) => {
-  const user = await getOptionalUser()
-  const sessionId = await getOrCreateSessionId()
+  const owner = await getCartOwner()
   const body = await parseBody(request, createOrderSchema)
 
-  const order = await OrderService.createOrder(sessionId, body, user?.id ?? null)
+  const order = await OrderService.createOrder(owner, body)
   return json(order, 201)
 })

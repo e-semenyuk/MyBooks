@@ -28,6 +28,12 @@ export default function LoginPage({ showToast, onLoginSuccess, onSwitchToRegiste
       if (result?.error) {
         showToast(result.error, 'error')
       } else {
+        // Carry items added as a guest over to the account cart
+        try {
+          await fetch('/api/cart/merge', { method: 'POST' })
+        } catch (mergeError) {
+          console.error('Cart merge failed:', mergeError)
+        }
         showToast('Successfully logged in!', 'success')
         onLoginSuccess()
       }

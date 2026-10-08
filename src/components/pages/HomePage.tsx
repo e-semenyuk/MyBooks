@@ -54,7 +54,8 @@ export default function HomePage({ showToast, updateCartCount }: HomePageProps) 
         showToast('Book added to cart', 'success')
         updateCartCount()
       } else {
-        showToast('Failed to add book to cart', 'error')
+        const data = await response.json().catch(() => null)
+        showToast(data?.error || 'Failed to add book to cart', 'error')
       }
     } catch (error) {
       showToast('Failed to add book to cart', 'error')

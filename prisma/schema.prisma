@@ -31,6 +31,7 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   orders        Order[]
+  cartItems     CartItem[]
 
   @@index([email])
   @@map("users")
@@ -47,20 +48,29 @@ model Book {
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
   orderItems    OrderItem[]
+  cartItems     CartItem[]
 
   @@index([title])
   @@index([author])
 }
 
+// A cart item belongs to a signed-in user or to a guest session, never both.
+// The check constraint lives in the migration (Prisma cannot express it).
 model CartItem {
   id        Int      @id @default(autoincrement())
   bookId    Int
+  book      Book     @relation(fields: [bookId], references: [id], onDelete: Cascade)
   quantity  Int
-  sessionId String
+  sessionId String?
+  userId    Int?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@unique([sessionId, bookId])
+  @@unique([userId, bookId])
   @@index([sessionId])
+  @@index([userId])
   @@index([bookId])
   @@map("cart_items")
 }

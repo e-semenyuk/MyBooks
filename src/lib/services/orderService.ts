@@ -9,6 +9,7 @@ import {
   isOrderStatus,
 } from '@/lib/orderStatus'
 import { Order, OrderWithItems, CreateOrderRequest } from '@/types'
+import { CartOwner } from '@/lib/cartOwner'
 import { CartService } from './cartService'
 import { BookService } from './bookService'
 
@@ -28,11 +29,11 @@ export class OrderRejectedError extends Error {
 
 export class OrderService {
   static async createOrder(
-    sessionId: string,
-    data: CreateOrderRequest,
-    userId?: number | null
+    owner: CartOwner,
+    data: CreateOrderRequest
   ): Promise<Order> {
-    const cartItems = await CartService.getCartItems(sessionId)
+    const userId = owner.kind === 'user' ? owner.userId : null
+    const cartItems = await CartService.getCartItems(owner)
 
     if (cartItems.length === 0) {
       throw new OrderRejectedError('Cart is empty')
@@ -61,7 +62,7 @@ export class OrderService {
     const order = await prisma.$transaction(async (tx) => {
       const newOrder = await tx.order.create({
         data: {
-          userId: userId || null,
+          userId,
           customerName: data.customerName,
           customerEmail: data.customerEmail,
           customerAddress: data.customerAddress,
@@ -96,7 +97,7 @@ export class OrderService {
       return newOrder
     })
 
-    await CartService.clearCart(sessionId)
+    await CartService.clearCart(owner)
 
     return mapOrder(order)
   }

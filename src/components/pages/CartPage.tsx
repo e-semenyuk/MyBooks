@@ -66,7 +66,8 @@ export default function CartPage({ showToast, updateCartCount, navigateTo }: Car
       if (response.ok) {
         loadCart()
       } else {
-        showToast('Failed to update quantity', 'error')
+        const data = await response.json().catch(() => null)
+        showToast(data?.error || 'Failed to update quantity', 'error')
       }
     } catch (error) {
       showToast('Failed to update quantity', 'error')

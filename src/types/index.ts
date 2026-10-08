@@ -17,7 +17,8 @@ export interface CartItem {
   id: number
   bookId: number
   quantity: number
-  sessionId: string
+  sessionId: string | null
+  userId: number | null
   createdAt?: Date
   updatedAt?: Date
 }
