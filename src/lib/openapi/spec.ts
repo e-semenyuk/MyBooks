@@ -133,6 +133,44 @@ function buildDocument(): Json {
           responses: { '200': { description: 'Deleted', content: jsonContent({ type: 'object', properties: { message: { type: 'string' } } }) }, '400': standardErrors['400'], ...authErrors, '404': errorResponse('NOT_FOUND') },
         },
       },
+      '/api/books/{id}/cover': {
+        parameters: [idParam('Book id')],
+        get: {
+          tags: ['Books'],
+          summary: 'The uploaded cover image. Supports ETag and If-None-Match (304).',
+          responses: {
+            '200': { description: 'The image', content: { 'image/jpeg': { schema: { type: 'string', format: 'binary' } }, 'image/png': { schema: { type: 'string', format: 'binary' } } } },
+            '304': { description: 'Not modified' },
+            '400': standardErrors['400'],
+            '404': errorResponse('COVER_NOT_FOUND (the generated cover is shown instead)'),
+          },
+        },
+        put: {
+          tags: ['Books'],
+          summary: 'Upload or replace the cover (admin). JPEG or PNG up to 2 MB; the type is checked from the file contents.',
+          security: [{ sessionCookie: [] }],
+          requestBody: {
+            required: true,
+            content: { 'multipart/form-data': { schema: { type: 'object', required: ['file'], properties: { file: { type: 'string', format: 'binary' } } } } },
+          },
+          responses: {
+            '200': { description: 'Stored; use coverUrl as the image address', content: jsonContent({ type: 'object', properties: { coverUrl: { type: 'string' } } }) },
+            '400': errorResponse('INVALID_UPLOAD, FILE_TOO_LARGE, UNSUPPORTED_IMAGE or INVALID_ID'),
+            ...authErrors,
+            '404': errorResponse('BOOK_NOT_FOUND'),
+          },
+        },
+        delete: {
+          tags: ['Books'],
+          summary: 'Remove the cover (admin). The book falls back to the generated cover.',
+          security: [{ sessionCookie: [] }],
+          responses: {
+            '200': { description: 'Removed', content: jsonContent({ type: 'object', properties: { message: { type: 'string' } } }) },
+            '400': standardErrors['400'],
+            ...authErrors,
+          },
+        },
+      },
       '/api/categories': {
         get: {
           tags: ['Categories'],
@@ -558,6 +596,7 @@ function buildDocument(): Json {
             isbn: { type: ['string', 'null'] }, price: { type: 'number', description: 'Dollars, two decimals' },
             description: { type: ['string', 'null'] }, stockQuantity: { type: 'integer', minimum: 0 },
             categories: { type: 'array', items: ref('Category') },
+            coverUrl: { type: ['string', 'null'], description: 'Address of the uploaded cover, or null (a generated cover is shown)' },
             createdAt: { type: 'string', format: 'date-time' }, updatedAt: { type: 'string', format: 'date-time' },
           },
         },
@@ -612,6 +651,9 @@ const OPERATION_IDS: Record<string, string> = {
   'get /api/books/{id}': 'getBook',
   'put /api/books/{id}': 'updateBook',
   'delete /api/books/{id}': 'deleteBook',
+  'get /api/books/{id}/cover': 'getBookCover',
+  'put /api/books/{id}/cover': 'uploadBookCover',
+  'delete /api/books/{id}/cover': 'removeBookCover',
   'get /api/categories': 'listCategories',
   'post /api/categories': 'createCategory',
   'put /api/categories/{id}': 'renameCategory',

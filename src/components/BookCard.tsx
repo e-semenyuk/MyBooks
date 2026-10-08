@@ -19,7 +19,7 @@ export default function BookCard({ book, onAddToCart }: BookCardProps) {
       data-testid={`book-card-${book.id}`}
       className="group flex h-full flex-col border-b border-r border-mist-200 bg-white"
     >
-      <BookCover id={book.id} title={book.title} />
+      <BookCover id={book.id} title={book.title} coverUrl={book.coverUrl} />
 
       <div className="flex flex-1 flex-col p-5">
         <div className="mb-4 flex items-center justify-between gap-3">

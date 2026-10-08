@@ -11,13 +11,19 @@ import type { Book, Order, OrderItem, OrderItemWithBook, OrderWithItems } from '
 // Database rows hold integer cents. The public API keeps dollars so clients
 // do not change when the storage format does.
 
-type BookRowWithCategories = BookRow & { categories?: { category: Category }[] }
+type BookRowWithCategories = BookRow & {
+  categories?: { category: Category }[]
+  cover?: { updatedAt: Date } | null
+}
 
 export function mapBook(row: BookRowWithCategories): Book {
-  const { priceCents, categories, ...rest } = row
+  const { priceCents, categories, cover, ...rest } = row
   return {
     ...rest,
     price: fromCents(priceCents),
+    ...(cover !== undefined
+      ? { coverUrl: cover ? `/api/books/${row.id}/cover?v=${cover.updatedAt.getTime()}` : null }
+      : {}),
     ...(categories ? { categories: categories.map((link) => link.category).sort((a, b) => a.name.localeCompare(b.name)) } : {}),
   }
 }

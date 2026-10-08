@@ -20,6 +20,7 @@ export interface Book {
   description: string | null
   stockQuantity: number
   categories?: Category[]
+  coverUrl?: string | null
   createdAt?: Date
   updatedAt?: Date
 }

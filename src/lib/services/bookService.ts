@@ -6,7 +6,10 @@ import { Book, CreateBookRequest, PagedBooks, UpdateBookRequest } from '@/types'
 import type { Prisma } from '@prisma/client'
 import type { BookSort } from '@/lib/validation/schemas'
 
-const withCategories = { categories: { include: { category: true } } } satisfies Prisma.BookInclude
+const withCategories = {
+  categories: { include: { category: true } },
+  cover: { select: { updatedAt: true } },
+} satisfies Prisma.BookInclude
 
 export interface BookListFilters {
   query?: string

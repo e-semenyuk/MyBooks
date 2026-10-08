@@ -155,7 +155,7 @@ export default function CartPage({ showToast, updateCartCount, navigateTo }: Car
                 <span className="hidden font-mono text-xs text-ink-500 sm:block">
                   {String(index + 1).padStart(2, '0')}
                 </span>
-                <BookCover id={item.book.id} title={item.book.title} size="sm" className="col-start-1 sm:col-start-2" />
+                <BookCover id={item.book.id} title={item.book.title} coverUrl={item.book.coverUrl} size="sm" className="col-start-1 sm:col-start-2" />
 
                 <div className="col-start-2 min-w-0 sm:col-start-3">
                   <div className="flex items-start justify-between gap-4">

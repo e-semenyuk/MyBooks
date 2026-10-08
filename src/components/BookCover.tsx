@@ -65,11 +65,12 @@ const COMPOSITIONS: ((p: Palette) => JSX.Element)[] = [
 interface BookCoverProps {
   id: number
   title?: string
+  coverUrl?: string | null
   size?: 'md' | 'sm'
   className?: string
 }
 
-export default function BookCover({ id, size = 'md', className = '' }: BookCoverProps) {
+export default function BookCover({ id, coverUrl, size = 'md', className = '' }: BookCoverProps) {
   const n = Math.abs(id)
   const palette = PALETTES[(n * 5 + 1) % PALETTES.length]
   const composition = COMPOSITIONS[n % COMPOSITIONS.length]
@@ -82,9 +83,15 @@ export default function BookCover({ id, size = 'md', className = '' }: BookCover
       } ${className}`}
       style={{ backgroundColor: palette.bg }}
     >
-      <svg viewBox="0 0 100 125" preserveAspectRatio="xMidYMid slice" className="h-full w-full">
-        {composition(palette)}
-      </svg>
+      {coverUrl ? (
+        // Decorative: the title is in the text next to the cover
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={coverUrl} alt="" loading="lazy" data-testid={`book-cover-image-${id}`} className="h-full w-full object-cover" />
+      ) : (
+        <svg viewBox="0 0 100 125" preserveAspectRatio="xMidYMid slice" className="h-full w-full">
+          {composition(palette)}
+        </svg>
+      )}
       <span className="absolute inset-x-0 bottom-0 h-1 bg-cobalt-500 opacity-0 transition-opacity duration-150 group-hover:opacity-100" />
     </div>
   )

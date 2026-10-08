@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { ORDER_STATUSES, OrderStatus, canTransition } from '@/lib/orderStatus'
 import { useSession } from 'next-auth/react'
 import { EditIcon, TrashIcon } from '@/components/icons'
+import BookCover from '@/components/BookCover'
 
 interface AdminPageProps {
   showToast: (message: string, type: 'success' | 'error') => void
@@ -26,6 +27,7 @@ interface Book {
   price: number
   description?: string
   stockQuantity: number
+  coverUrl?: string | null
   categories?: { id: number; name: string; slug: string }[]
 }
 
@@ -49,6 +51,8 @@ export default function AdminPage({ showToast }: AdminPageProps) {
   const [categories, setCategories] = useState<CategoryRow[]>([])
   const [newCategory, setNewCategory] = useState('')
   const [renaming, setRenaming] = useState<{ id: number; name: string } | null>(null)
+  const [coverFile, setCoverFile] = useState<File | null>(null)
+  const [fileInputKey, setFileInputKey] = useState(0)
 
   const emptyForm = {
     title: '',
@@ -183,9 +187,24 @@ export default function AdminPage({ showToast }: AdminPageProps) {
       })
 
       if (response.ok) {
+        const saved = await response.json()
         showToast(editingBook ? 'Book updated successfully' : 'Book added successfully', 'success')
+
+        // The book is saved first; a bad image does not undo that
+        if (coverFile) {
+          const upload = new FormData()
+          upload.append('file', coverFile)
+          const coverResponse = await fetch(`/api/books/${saved.id}/cover`, { method: 'PUT', body: upload })
+          if (!coverResponse.ok) {
+            const coverError = await coverResponse.json().catch(() => null)
+            showToast(coverError?.error || 'The book was saved but the cover was not uploaded', 'error')
+          }
+        }
+
         setBookForm(emptyForm)
         setEditingBook(null)
+        setCoverFile(null)
+        setFileInputKey((key) => key + 1)
         loadBooks()
       } else {
         const error = await response.json()
@@ -261,6 +280,20 @@ export default function AdminPage({ showToast }: AdminPageProps) {
   const resetForm = () => {
     setEditingBook(null)
     setBookForm(emptyForm)
+    setCoverFile(null)
+    setFileInputKey((key) => key + 1)
+  }
+
+  const removeCover = async () => {
+    if (!editingBook) return
+    const response = await fetch(`/api/books/${editingBook.id}/cover`, { method: 'DELETE' })
+    if (response.ok) {
+      showToast('Cover removed successfully', 'success')
+      setEditingBook({ ...editingBook, coverUrl: null })
+      loadBooks()
+    } else {
+      showToast('Failed to remove cover', 'error')
+    }
   }
 
   const tabClass = (tab: Tab) =>
@@ -393,6 +426,32 @@ export default function AdminPage({ showToast }: AdminPageProps) {
                     onChange={(e) => setBookForm({ ...bookForm, description: e.target.value })}
                     rows={3}
                     className="input"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="book-cover" className="label">Cover image (JPEG or PNG, up to 2 MB)</label>
+                  {editingBook?.coverUrl && (
+                    <div className="mb-3 flex items-end gap-3">
+                      <BookCover id={editingBook.id} coverUrl={editingBook.coverUrl} size="sm" />
+                      <button
+                        data-testid="admin-book-cover-remove-button"
+                        type="button"
+                        onClick={removeCover}
+                        className="btn btn-danger btn-sm"
+                      >
+                        Remove cover
+                      </button>
+                    </div>
+                  )}
+                  <input
+                    key={fileInputKey}
+                    id="book-cover"
+                    data-testid="admin-book-cover-input"
+                    type="file"
+                    accept="image/png,image/jpeg"
+                    onChange={(e) => setCoverFile(e.target.files?.[0] ?? null)}
+                    className="block w-full text-sm file:mr-3 file:border file:border-ink-950 file:bg-white file:px-3 file:py-2 file:text-sm file:font-semibold hover:file:bg-ink-950 hover:file:text-white"
                   />
                 </div>
 

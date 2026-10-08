@@ -71,6 +71,7 @@ model Book {
   orderItems    OrderItem[]
   cartItems     CartItem[]
   categories    BookCategory[]
+  cover         BookCover?
 
   @@index([title])
   @@index([author])
@@ -237,4 +238,16 @@ model EmailOutbox {
 
   @@index([to])
   @@map("email_outbox")
+}
+
+// Uploaded cover image, kept apart from Book so listing books never loads the bytes.
+model BookCover {
+  bookId      Int      @id
+  book        Book     @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  contentType String
+  data        Bytes
+  size        Int
+  updatedAt   DateTime @updatedAt
+
+  @@map("book_covers")
 }

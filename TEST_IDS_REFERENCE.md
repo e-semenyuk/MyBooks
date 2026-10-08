@@ -315,6 +315,16 @@ Emails (verification and reset links) are readable in tests through `GET /api/te
 
 Rules: a new account is unverified and cannot place orders (API answers 403 `EMAIL_NOT_VERIFIED`); a reset link works once and expires after 30 minutes; a verification link expires after 24 hours; a new link replaces the previous one; five wrong passwords within ten minutes lock the account for 15 minutes (the right password is refused too), and a successful reset lifts the lock. Seeded users are already verified.
 
+## Book covers
+
+| Test ID | Element | Description |
+|---------|---------|-------------|
+| `book-cover-image-{id}` | `<img>` | Present only for books with an uploaded cover; other books show a generated cover (no image element) |
+| `admin-book-cover-input` | `<input file>` | JPEG or PNG up to 2 MB, chosen on the add or edit form and uploaded after the book is saved |
+| `admin-book-cover-remove-button` | `<button>` | Edit mode, only when the book has a cover |
+
+API: `PUT /api/books/{id}/cover` (multipart field `file`, admin), `GET` (public, 404 when none, supports `If-None-Match`), `DELETE` (admin). The image type is checked from the file contents, not the name or the declared type.
+
 ## Usage Examples
 
 ### Cypress/Playwright Tests
