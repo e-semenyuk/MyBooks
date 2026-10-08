@@ -20,13 +20,18 @@ import {
   promoProblem,
   taxRateFromEnv,
 } from '@/lib/pricing'
+import { paymentProvider } from '@/lib/payments'
+import { cardBrand, normalizeCardNumber } from '@/lib/payments/card'
+import { paymentFailed } from '@/lib/payments/mockProvider'
 import { CartService } from './cartService'
 import { BookService } from './bookService'
 
-const withItems = { orderItems: { include: { book: true } } } satisfies Prisma.OrderInclude
+const payments = { orderBy: { id: 'desc' }, take: 3 } satisfies Prisma.Order$paymentsArgs
+const withItems = { orderItems: { include: { book: true } }, payments } satisfies Prisma.OrderInclude
 const withItemsAndEvents = {
   orderItems: { include: { book: true } },
   events: { orderBy: { createdAt: 'asc' } },
+  payments,
 } satisfies Prisma.OrderInclude
 
 export class OrderNotFoundError extends Error {
@@ -77,73 +82,126 @@ export class OrderService {
     return { lines, promo, totals }
   }
 
+  // Pays first, then creates the order. A declined card creates no order and
+  // leaves the cart and the stock alone. If the order cannot be completed after
+  // the money was taken (for example the last copy sold in the meantime), the
+  // charge is refunded.
   static async createOrder(
     owner: CartOwner,
     data: CreateOrderRequest
   ): Promise<Order> {
-    const userId = owner.kind === 'user' ? owner.userId : null
+    if (owner.kind !== 'user') throw ApiError.unauthorized()
+    const userId = owner.userId
     const shippingMethod = data.shippingMethod ?? 'STANDARD'
     const { lines, promo, totals } = await this.quote(owner, { shippingMethod, promoCode: data.promoCode })
 
-    // Create order with items in a transaction
-    const order = await prisma.$transaction(async (tx) => {
-      const newOrder = await tx.order.create({
+    const cardNumber = normalizeCardNumber(data.card.number)
+    const brand = cardBrand(cardNumber)
+    const last4 = cardNumber.slice(-4)
+
+    const charge = await paymentProvider.charge({ amountCents: totals.totalCents, cardNumber })
+    if (!charge.ok) {
+      await prisma.payment.create({
         data: {
           userId,
-          customerName: data.customerName,
-          customerEmail: data.customerEmail,
-          customerAddress: data.customerAddress,
-          subtotalCents: totals.subtotalCents,
-          discountCents: totals.discountCents,
-          shippingCents: totals.shippingCents,
-          taxCents: totals.taxCents,
-          totalCents: totals.totalCents,
-          shippingMethod,
-          promoCode: promo?.code ?? null,
-          status: 'CONFIRMED',
-          events: { create: { fromStatus: null, toStatus: 'CONFIRMED', actorId: userId } },
+          amountCents: totals.totalCents,
+          status: 'FAILED',
+          cardBrand: brand,
+          cardLast4: last4,
+          failureCode: charge.code,
+          failureMessage: charge.message,
         },
       })
+      throw paymentFailed(charge)
+    }
 
-      for (const { cartItem, book } of lines) {
-        await tx.orderItem.create({
+    let order
+    try {
+      order = await prisma.$transaction(async (tx) => {
+        const newOrder = await tx.order.create({
           data: {
-            orderId: newOrder.id,
-            bookId: cartItem.bookId,
-            quantity: cartItem.quantity,
-            priceCents: book.priceCents,
+            userId,
+            customerName: data.customerName,
+            customerEmail: data.customerEmail,
+            customerAddress: data.customerAddress,
+            subtotalCents: totals.subtotalCents,
+            discountCents: totals.discountCents,
+            shippingCents: totals.shippingCents,
+            taxCents: totals.taxCents,
+            totalCents: totals.totalCents,
+            shippingMethod,
+            promoCode: promo?.code ?? null,
+            status: 'CONFIRMED',
+            events: { create: { fromStatus: null, toStatus: 'CONFIRMED', actorId: userId } },
+            payments: {
+              create: {
+                userId,
+                amountCents: totals.totalCents,
+                status: 'PAID',
+                providerRef: charge.ref,
+                cardBrand: brand,
+                cardLast4: last4,
+              },
+            },
           },
         })
 
-        // Atomic conditional decrement: fails if stock was taken by a concurrent order
-        const updated = await tx.book.updateMany({
-          where: { id: cartItem.bookId, stockQuantity: { gte: cartItem.quantity } },
-          data: { stockQuantity: { decrement: cartItem.quantity } },
-        })
+        for (const { cartItem, book } of lines) {
+          await tx.orderItem.create({
+            data: {
+              orderId: newOrder.id,
+              bookId: cartItem.bookId,
+              quantity: cartItem.quantity,
+              priceCents: book.priceCents,
+            },
+          })
 
-        if (updated.count === 0) {
-          throw new OrderRejectedError(`Insufficient stock for book: ${book.title}`)
+          // Atomic conditional decrement: fails if stock was taken by a concurrent order
+          const updated = await tx.book.updateMany({
+            where: { id: cartItem.bookId, stockQuantity: { gte: cartItem.quantity } },
+            data: { stockQuantity: { decrement: cartItem.quantity } },
+          })
+
+          if (updated.count === 0) {
+            throw new OrderRejectedError(`Insufficient stock for book: ${book.title}`)
+          }
         }
-      }
 
-      // Count the code once per order even when two orders race for the last use
-      if (promo) {
-        const redeemed = await tx.$executeRaw`
-          UPDATE "promo_codes" SET "usedCount" = "usedCount" + 1
-          WHERE "id" = ${promo.id} AND "active" = true
-            AND ("maxUses" IS NULL OR "usedCount" < "maxUses")
-            AND ("expiresAt" IS NULL OR "expiresAt" > NOW())`
-        if (redeemed === 0) {
-          throw ApiError.badRequest(PROMO_MESSAGES.PROMO_EXHAUSTED, 'PROMO_EXHAUSTED')
+        // Count the code once per order even when two orders race for the last use
+        if (promo) {
+          const redeemed = await tx.$executeRaw`
+            UPDATE "promo_codes" SET "usedCount" = "usedCount" + 1
+            WHERE "id" = ${promo.id} AND "active" = true
+              AND ("maxUses" IS NULL OR "usedCount" < "maxUses")
+              AND ("expiresAt" IS NULL OR "expiresAt" > NOW())`
+          if (redeemed === 0) {
+            throw ApiError.badRequest(PROMO_MESSAGES.PROMO_EXHAUSTED, 'PROMO_EXHAUSTED')
+          }
         }
-      }
 
-      return newOrder
-    })
+        return newOrder
+      })
+    } catch (error) {
+      await paymentProvider.refund(charge.ref)
+      await prisma.payment.create({
+        data: {
+          userId,
+          amountCents: totals.totalCents,
+          status: 'REFUNDED',
+          providerRef: charge.ref,
+          cardBrand: brand,
+          cardLast4: last4,
+          failureCode: 'ORDER_NOT_COMPLETED',
+          failureMessage: 'The order could not be completed, so the charge was refunded',
+        },
+      })
+      throw error
+    }
 
     await CartService.clearCart(owner)
 
-    return mapOrder(order)
+    const saved = await prisma.order.findUniqueOrThrow({ where: { id: order.id }, include: withItems })
+    return mapOrder(saved)
   }
 
   static async getAllOrders(): Promise<Order[]> {
@@ -231,11 +289,18 @@ export class OrderService {
             data: { stockQuantity: { increment: item.quantity } },
           })
         }
+
+        // Give the money back
+        const paid = await tx.payment.findFirst({ where: { orderId: id, status: 'PAID' } })
+        if (paid) {
+          if (paid.providerRef) await paymentProvider.refund(paid.providerRef)
+          await tx.payment.update({ where: { id: paid.id }, data: { status: 'REFUNDED' } })
+        }
       }
 
       const updated = await tx.order.findUniqueOrThrow({
         where: { id },
-        include: { events: { orderBy: { createdAt: 'asc' } } },
+        include: { events: { orderBy: { createdAt: 'asc' } }, payments },
       })
       return mapOrder(updated)
     })

@@ -4,6 +4,7 @@ import type {
   OrderItem as OrderItemRow,
   OrderEvent,
   Category,
+  Payment,
 } from '@prisma/client'
 import { fromCents } from '@/lib/money'
 import type { Book, Order, OrderItem, OrderItemWithBook, OrderWithItems } from '@/types'
@@ -41,14 +42,19 @@ export function mapOrderItem(row: ItemRow): OrderItem {
   }
 }
 
-type EventRows = { events?: OrderEvent[] }
+type EventRows = { events?: OrderEvent[]; payments?: Payment[] }
 
 export function mapOrder(row: OrderRow & EventRows & { orderItems: (ItemRow & { book: BookRow })[] }): OrderWithItems
 export function mapOrder(row: OrderRow & EventRows & { orderItems?: ItemRow[] }): Order
 export function mapOrder(row: OrderRow & EventRows & { orderItems?: ItemRow[] }): Order {
-  const { totalCents, subtotalCents, discountCents, shippingCents, taxCents, orderItems, ...rest } = row
+  const { totalCents, subtotalCents, discountCents, shippingCents, taxCents, orderItems, payments, ...rest } = row
+  // The payment that belongs to the order: the newest one that took money
+  const paid = payments?.find((p) => p.status === 'PAID' || p.status === 'REFUNDED')
   return {
     ...rest,
+    ...(payments !== undefined
+      ? { payment: paid ? { status: paid.status, cardBrand: paid.cardBrand, cardLast4: paid.cardLast4 } : null }
+      : {}),
     subtotal: fromCents(subtotalCents),
     discount: fromCents(discountCents),
     shipping: fromCents(shippingCents),

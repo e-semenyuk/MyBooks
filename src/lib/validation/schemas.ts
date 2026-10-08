@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { SHIPPING_METHODS } from '@/lib/pricing'
+import { cardExpired, luhnValid, normalizeCardNumber } from '@/lib/payments/card'
 
 const money = z
   .number({ error: 'Price must be a number' })
@@ -52,6 +53,30 @@ export const updateCartItemSchema = z.object({ quantity })
 const shippingMethod = z.enum(SHIPPING_METHODS, { error: 'Shipping method must be STANDARD or EXPRESS' })
 const promoCode = z.string().trim().max(40, 'Promo code is too long').optional()
 
+// Card details are checked here and handed to the payment provider; the number
+// and security code are never stored.
+export const cardSchema = z
+  .object({
+    number: z
+      .string({ error: 'Card number is required' })
+      .refine((value) => luhnValid(normalizeCardNumber(value)), 'Card number is not valid'),
+    expMonth: z.coerce
+      .number({ error: 'Expiry month is required' })
+      .int('Expiry month must be 1 to 12')
+      .min(1, 'Expiry month must be 1 to 12')
+      .max(12, 'Expiry month must be 1 to 12'),
+    expYear: z.coerce
+      .number({ error: 'Expiry year is required' })
+      .int('Expiry year is not valid')
+      .min(0, 'Expiry year is not valid')
+      .max(2100, 'Expiry year is not valid'),
+    cvc: z.string({ error: 'Security code is required' }).regex(/^\d{3,4}$/, 'Security code must be 3 or 4 digits'),
+  })
+  .refine((card) => !cardExpired(card.expMonth, card.expYear), {
+    message: 'Card has expired',
+    path: ['expMonth'],
+  })
+
 export const quoteSchema = z.object({
   shippingMethod: shippingMethod.default('STANDARD'),
   promoCode,
@@ -60,6 +85,7 @@ export const quoteSchema = z.object({
 export const createOrderSchema = z.object({
   shippingMethod: shippingMethod.default('STANDARD'),
   promoCode,
+  card: cardSchema,
   customerName: text('Customer name', 100),
   customerEmail: z
     .string({ error: 'Customer email is required' })

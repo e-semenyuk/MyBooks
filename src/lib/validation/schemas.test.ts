@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   addToCartSchema,
   addressSchema,
+  cardSchema,
   forgotPasswordSchema,
   resetPasswordSchema,
   verifyEmailSchema,
@@ -70,7 +71,8 @@ describe('cart schemas', () => {
 })
 
 describe('createOrderSchema', () => {
-  const valid = { customerName: 'Ann', customerEmail: 'ann@example.com', customerAddress: '1 Main St' }
+  const card = { number: '4242 4242 4242 4242', expMonth: 12, expYear: 2099, cvc: '123' }
+  const valid = { customerName: 'Ann', customerEmail: 'ann@example.com', customerAddress: '1 Main St', card }
 
   it('accepts a valid order and defaults to standard shipping', () => {
     expect(createOrderSchema.parse(valid)).toEqual({ ...valid, shippingMethod: 'STANDARD' })
@@ -235,5 +237,33 @@ describe('account token schemas', () => {
     expect(verifyEmailSchema.safeParse({ token: 'short' }).success).toBe(false)
     expect(verifyEmailSchema.safeParse({}).success).toBe(false)
     expect(resetPasswordSchema.safeParse({ token: 'x'.repeat(201), password: 'abcdef12' }).success).toBe(false)
+  })
+})
+
+describe('cardSchema', () => {
+  const valid = { number: '4242 4242 4242 4242', expMonth: 12, expYear: 2099, cvc: '123' }
+  const firstMessage = (input: unknown) => cardSchema.safeParse(input).error?.issues[0]?.message
+
+  it('accepts a good card, with spaces in the number and a two-digit year as text', () => {
+    expect(cardSchema.safeParse(valid).success).toBe(true)
+    expect(cardSchema.safeParse({ ...valid, expMonth: '12', expYear: '99' }).success).toBe(true)
+    expect(cardSchema.safeParse({ ...valid, cvc: '1234' }).success).toBe(true)
+  })
+
+  it.each([
+    [{ ...valid, number: '4242 4242 4242 4241' }, 'Card number is not valid'],
+    [{ ...valid, number: '' }, 'Card number is not valid'],
+    [{ ...valid, expMonth: 13 }, 'Expiry month must be 1 to 12'],
+    [{ ...valid, expMonth: 0 }, 'Expiry month must be 1 to 12'],
+    [{ ...valid, expMonth: 1, expYear: 2020 }, 'Card has expired'],
+    [{ ...valid, cvc: '12' }, 'Security code must be 3 or 4 digits'],
+    [{ ...valid, cvc: 'abc' }, 'Security code must be 3 or 4 digits'],
+  ])('rejects %j', (input, message) => {
+    expect(firstMessage(input)).toBe(message)
+  })
+
+  it('is required to place an order', () => {
+    const base = { customerName: 'A', customerEmail: 'a@b.co', customerAddress: 'x' }
+    expect(createOrderSchema.safeParse(base).success).toBe(false)
   })
 })

@@ -6,7 +6,8 @@ Digital bookstore built with Next.js 14 (App Router), TypeScript, Prisma and Pos
 
 - Browse the catalog with categories, filters (category, author, price), sorting and pages; the state is in the URL. Search by title, author or ISBN. Every book has a detail page and an optional uploaded cover (JPEG or PNG, up to 2 MB, stored in the database)
 - Guest cart that follows you into your account at sign-in; stock is checked when you add items
-- Checkout needs an account. It offers Standard or Express shipping and promo codes, shows the full breakdown (subtotal, discount, shipping, tax) and creates an order (status flow PENDING → CONFIRMED → SHIPPED → DELIVERED, or CANCELLED) and reduces stock
+- Checkout needs an account. It offers Standard or Express shipping and promo codes, shows the full breakdown (subtotal, discount, shipping, tax) takes payment with a card (mock provider, test cards listed in `TEST_IDS_REFERENCE.md`) and creates an order (status flow PENDING → CONFIRMED → SHIPPED → DELIVERED, or CANCELLED) and reduces stock
+- Cancelling an order before it ships restores stock and refunds the payment
 - Accounts with roles USER and ADMIN, email verification, password reset by email link and sign-in lockout; order history and order detail with status history
 - Admin page for books and orders
 - Every page has its own URL; private pages redirect guests to the login page

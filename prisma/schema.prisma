@@ -14,6 +14,13 @@ enum UserRole {
   ADMIN
 }
 
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
 enum TokenPurpose {
   PASSWORD_RESET
   EMAIL_VERIFICATION
@@ -53,6 +60,7 @@ model User {
   cartItems     CartItem[]
   addresses     Address[]
   authTokens    AuthToken[]
+  payments      Payment[]
 
   @@index([email])
   @@map("users")
@@ -118,6 +126,7 @@ model Order {
   status          OrderStatus @default(CONFIRMED)
   orderItems      OrderItem[]
   events          OrderEvent[]
+  payments        Payment[]
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
 
@@ -250,4 +259,28 @@ model BookCover {
   updatedAt   DateTime @updatedAt
 
   @@map("book_covers")
+}
+
+// One row per attempt to take money. A failed attempt has no order; a paid one
+// is linked to the order created from it. Card numbers and CVCs are never stored.
+model Payment {
+  id             Int           @id @default(autoincrement())
+  userId         Int
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orderId        Int?
+  order          Order?        @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  amountCents    Int
+  status         PaymentStatus
+  provider       String        @default("mock")
+  providerRef    String?
+  cardBrand      String?
+  cardLast4      String?
+  failureCode    String?
+  failureMessage String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  @@index([orderId])
+  @@index([userId])
+  @@map("payments")
 }

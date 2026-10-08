@@ -1771,8 +1771,8 @@
         "tags": [
           "Orders"
         ],
-        "summary": "Turn the signed-in user cart into an order (status CONFIRMED), reduce stock and count the promo code",
-        "description": "Signing in is required. Prices are recomputed on the server; the client never sends amounts.",
+        "summary": "Pay for the signed-in user cart and turn it into an order (status CONFIRMED), reduce stock and count the promo code",
+        "description": "Signing in is required. Prices are recomputed on the server; the client never sends amounts. The payment provider is a mock; the card number decides the outcome: 4242424242424242 succeeds, 4000000000000002 is declined, 4000000000009995 has insufficient funds, 4000000000000119 gives a processing error, 4000000000000341 times out. Card numbers and security codes are never stored. If the order cannot be completed after the charge, the charge is refunded.",
         "security": [
           {
             "sessionCookie": []
@@ -1797,6 +1797,34 @@
                     "type": "string",
                     "maxLength": 40
                   },
+                  "card": {
+                    "type": "object",
+                    "properties": {
+                      "number": {
+                        "type": "string"
+                      },
+                      "expMonth": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 12
+                      },
+                      "expYear": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 2100
+                      },
+                      "cvc": {
+                        "type": "string",
+                        "pattern": "^\\d{3,4}$"
+                      }
+                    },
+                    "required": [
+                      "number",
+                      "expMonth",
+                      "expYear",
+                      "cvc"
+                    ]
+                  },
                   "customerName": {
                     "type": "string",
                     "minLength": 1,
@@ -1814,6 +1842,7 @@
                   }
                 },
                 "required": [
+                  "card",
                   "customerName",
                   "customerEmail",
                   "customerAddress"
@@ -1834,7 +1863,7 @@
             }
           },
           "400": {
-            "description": "VALIDATION_ERROR, ORDER_REJECTED (empty cart, missing book, not enough stock), INVALID_PROMO, PROMO_EXPIRED or PROMO_EXHAUSTED",
+            "description": "VALIDATION_ERROR (including a card number that fails the check or an expired card), ORDER_REJECTED (empty cart, missing book, not enough stock), INVALID_PROMO, PROMO_EXPIRED or PROMO_EXHAUSTED",
             "content": {
               "application/json": {
                 "schema": {
@@ -1845,6 +1874,16 @@
           },
           "401": {
             "description": "Not signed in (code UNAUTHORIZED)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "Payment failed, nothing was charged and the cart is kept: CARD_DECLINED, INSUFFICIENT_FUNDS, PROCESSING_ERROR or PAYMENT_TIMEOUT",
             "content": {
               "application/json": {
                 "schema": {
@@ -2146,6 +2185,85 @@
         },
         "operationId": "listShippingMethods",
         "security": []
+      }
+    },
+    "/api/orders/{id}/cancel": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "description": "Order id",
+          "schema": {
+            "type": "integer",
+            "minimum": 1
+          }
+        }
+      ],
+      "post": {
+        "tags": [
+          "Orders"
+        ],
+        "summary": "Cancel an order before it ships. Owner or admin; another user's order answers 404.",
+        "description": "Allowed while the status is PENDING or CONFIRMED. Puts the books back in stock and refunds the payment.",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The cancelled order",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Order"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed (code VALIDATION_ERROR, INVALID_JSON or INVALID_ID)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in (code UNAUTHORIZED)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "ORDER_NOT_FOUND",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "INVALID_TRANSITION (already shipped, delivered or cancelled)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "cancelOrder"
       }
     },
     "/api/register": {

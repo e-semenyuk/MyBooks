@@ -13,7 +13,7 @@ describe('OpenAPI document', () => {
     const paths = Object.keys(buildOpenApi().paths)
     for (const path of [
       '/api/health', '/api/books', '/api/books/{id}', '/api/books/{id}/cover', '/api/cart', '/api/cart/{id}', '/api/cart/total',
-      '/api/cart/merge', '/api/categories', '/api/categories/{id}', '/api/addresses', '/api/addresses/{id}', '/api/checkout/quote', '/api/shipping-methods', '/api/orders', '/api/orders/{id}', '/api/register', '/api/account/me', '/api/account/forgot-password', '/api/account/reset-password', '/api/account/verify-email', '/api/account/resend-verification', '/api/test/emails', '/api/test/reset', '/api/test/seed',
+      '/api/cart/merge', '/api/categories', '/api/categories/{id}', '/api/addresses', '/api/addresses/{id}', '/api/checkout/quote', '/api/shipping-methods', '/api/orders', '/api/orders/{id}', '/api/orders/{id}/cancel', '/api/register', '/api/account/me', '/api/account/forgot-password', '/api/account/reset-password', '/api/account/verify-email', '/api/account/resend-verification', '/api/test/emails', '/api/test/reset', '/api/test/seed',
     ]) {
       expect(paths).toContain(path)
     }

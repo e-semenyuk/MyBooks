@@ -89,12 +89,19 @@ Checkout needs an account: guests who open `/checkout` are sent to `/login?callb
 | `summary-tax` | `<dd>` | 8% of the discounted subtotal (`TAX_RATE`) |
 | `summary-total` | `<dd>` | subtotal - discount + shipping + tax |
 | `checkout-empty` | `<p>` | Shown when the cart is empty; Place Order is disabled |
+| `payment-section` | `<fieldset>` | Card details |
+| `card-number-input` | `<input>` | Card number (spaces are added as you type) |
+| `card-expiry-input` | `<input>` | `MM/YY` or `MM/YYYY` |
+| `card-cvc-input` | `<input>` | 3 or 4 digits |
+| `payment-error` | `<p>` | Card or payment problem; the cart is kept and the page stays on checkout |
 | `back-to-cart-button` | `<button>` | Back to the cart |
 | `place-order-button` | `<button>` | Place the order |
 
+Test cards (the payment provider is a mock; no money moves): `4242424242424242` pays, `4000000000000002` is declined (`CARD_DECLINED`), `4000000000009995` has insufficient funds (`INSUFFICIENT_FUNDS`), `4000000000000119` gives a processing error (`PROCESSING_ERROR`), `4000000000000341` times out (`PAYMENT_TIMEOUT`). Any other number that passes the card check pays. A failed payment answers HTTP 402, creates no order and keeps cart and stock. If the order cannot be completed after a successful charge (for example the last copy sold meanwhile), the charge is refunded.
+
 Seeded promo codes: `WELCOME10` (10% off), `SAVE5` ($5 off), `HALFOFF` (50% off), `ONCEONLY` (20% off, one use), `EXPIRED10` (expired), `DISABLED5` (inactive).
 
-Order detail also shows `order-detail-breakdown`, `order-detail-subtotal`, `order-detail-discount`, `order-detail-shipping` and `order-detail-tax`.
+Order detail also shows `order-detail-payment` and `order-detail-payment-status` ("Paid" or "Refunded"), the cancel controls `order-cancel-section`, `order-cancel-button`, `order-cancel-dialog`, `order-cancel-confirm-button`, `order-cancel-keep-button`, `order-cancel-error` (a cancel is possible while the status is PENDING or CONFIRMED; the failure text is "Unable to cancel order. Try again later."), `order-detail-breakdown`, `order-detail-subtotal`, `order-detail-discount`, `order-detail-shipping` and `order-detail-tax`.
 
 ## LoginPage
 

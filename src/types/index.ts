@@ -57,11 +57,18 @@ export interface Order {
   totalAmount: number
   shippingMethod: 'STANDARD' | 'EXPRESS'
   promoCode: string | null
+  payment?: OrderPayment | null
   status: OrderStatus
   orderItems?: OrderItem[]
   events?: OrderStatusEvent[]
   createdAt?: Date
   updatedAt?: Date
+}
+
+export interface OrderPayment {
+  status: 'PENDING' | 'PAID' | 'FAILED' | 'REFUNDED'
+  cardBrand: string | null
+  cardLast4: string | null
 }
 
 export interface OrderStatusEvent {
@@ -112,9 +119,17 @@ export interface UpdateCartItemRequest {
   quantity: number
 }
 
+export interface CardInput {
+  number: string
+  expMonth: number
+  expYear: number
+  cvc: string
+}
+
 export interface CreateOrderRequest {
   shippingMethod?: 'STANDARD' | 'EXPRESS'
   promoCode?: string
+  card: CardInput
   customerName: string
   customerEmail: string
   customerAddress: string

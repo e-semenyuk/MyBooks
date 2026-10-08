@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { ArrowLeftIcon } from '@/components/icons'
+import { canTransition } from '@/lib/orderStatus'
 import { OrderWithItems } from '@/types'
 
 interface OrderDetailPageProps {
@@ -14,6 +15,9 @@ export default function OrderDetailPage({ orderId, showToast }: OrderDetailPageP
   const [order, setOrder] = useState<OrderWithItems | null>(null)
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
+  const [confirmingCancel, setConfirmingCancel] = useState(false)
+  const [cancelling, setCancelling] = useState(false)
+  const [cancelError, setCancelError] = useState<string | null>(null)
 
   useEffect(() => {
     const load = async () => {
@@ -37,6 +41,31 @@ export default function OrderDetailPage({ orderId, showToast }: OrderDetailPageP
     // showToast is stable for the lifetime of the app
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [orderId])
+
+  const cancelOrder = async () => {
+    setCancelling(true)
+    setCancelError(null)
+    try {
+      const response = await fetch(`/api/orders/${orderId}/cancel`, { method: 'POST' })
+      if (response.ok) {
+        const updated = await response.json()
+        setOrder((current) => (current ? { ...current, ...updated, orderItems: current.orderItems } : current))
+        setConfirmingCancel(false)
+        showToast('Order cancelled. Your payment is being refunded.', 'success')
+        // Reload to show the new history and refund
+        const fresh = await fetch(`/api/orders/${orderId}`)
+        if (fresh.ok) setOrder(await fresh.json())
+      } else if (response.status === 409) {
+        setCancelError('This order can no longer be cancelled.')
+      } else {
+        setCancelError('Unable to cancel order. Try again later.')
+      }
+    } catch {
+      setCancelError('Unable to cancel order. Try again later.')
+    } finally {
+      setCancelling(false)
+    }
+  }
 
   if (loading) {
     return (
@@ -177,6 +206,72 @@ export default function OrderDetailPage({ orderId, showToast }: OrderDetailPageP
           )}
         </div>
 
+        <div className="space-y-8">
+        {order.payment && (
+          <aside data-testid="order-detail-payment" className="border-2 border-ink-950">
+            <div className="bg-ink-950 px-6 py-3">
+              <h3 className="font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-white">Payment</h3>
+            </div>
+            <div className="p-6 text-sm">
+              <p data-testid="order-detail-payment-status" className="font-semibold text-ink-950">
+                {order.payment.status === 'REFUNDED' ? 'Refunded' : 'Paid'}
+              </p>
+              {order.payment.cardLast4 && (
+                <p className="font-mono text-xs text-ink-600">
+                  {order.payment.cardBrand} ending {order.payment.cardLast4}
+                </p>
+              )}
+            </div>
+          </aside>
+        )}
+
+        {canTransition(order.status, 'CANCELLED') && (
+          <div data-testid="order-cancel-section">
+            {!confirmingCancel ? (
+              <button
+                data-testid="order-cancel-button"
+                onClick={() => setConfirmingCancel(true)}
+                className="btn btn-danger w-full"
+              >
+                Cancel order
+              </button>
+            ) : (
+              <div data-testid="order-cancel-dialog" role="alertdialog" aria-labelledby="cancel-title" className="border-2 border-danger p-5">
+                <h3 id="cancel-title" className="font-display text-lg font-bold text-ink-950">Cancel this order?</h3>
+                <p className="mt-1 text-sm text-ink-600">
+                  The books go back on the shelf and your payment is refunded. This cannot be undone.
+                </p>
+                {cancelError && (
+                  <p data-testid="order-cancel-error" role="alert" className="mt-3 text-sm font-semibold text-danger">
+                    {cancelError}
+                  </p>
+                )}
+                <div className="mt-4 flex gap-2">
+                  <button
+                    data-testid="order-cancel-confirm-button"
+                    onClick={cancelOrder}
+                    disabled={cancelling}
+                    className="btn btn-danger flex-1"
+                  >
+                    {cancelling ? 'Cancelling...' : 'Yes, cancel order'}
+                  </button>
+                  <button
+                    data-testid="order-cancel-keep-button"
+                    onClick={() => {
+                      setConfirmingCancel(false)
+                      setCancelError(null)
+                    }}
+                    disabled={cancelling}
+                    className="btn btn-secondary flex-1"
+                  >
+                    Keep order
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         <aside className="border-2 border-ink-950">
           <div className="bg-ink-950 px-6 py-3">
             <h3 className="font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-white">Delivery</h3>
@@ -191,6 +286,7 @@ export default function OrderDetailPage({ orderId, showToast }: OrderDetailPageP
             </p>
           </div>
         </aside>
+        </div>
       </div>
     </div>
   )

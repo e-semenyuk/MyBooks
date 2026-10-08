@@ -6,6 +6,7 @@ import { ArrowRightIcon } from '@/components/icons'
 import { SHIPPING_OPTIONS, SHIPPING_METHODS, ShippingMethodName } from '@/lib/pricing'
 import { formatMoney, toCents } from '@/lib/money'
 import { formatAddress } from '@/lib/address'
+import { formatCardNumberInput } from '@/lib/payments/card'
 import VerifyEmailBanner from '@/components/VerifyEmailBanner'
 import type { SavedAddress } from '@/components/AddressBook'
 
@@ -40,6 +41,8 @@ export default function CheckoutPage({ showToast, updateCartCount, navigateTo }:
   const [quote, setQuote] = useState<Quote | null>(null)
   const [cartEmpty, setCartEmpty] = useState(false)
   const [emailVerified, setEmailVerified] = useState(true)
+  const [card, setCard] = useState({ number: '', expiry: '', cvc: '' })
+  const [paymentError, setPaymentError] = useState<string | null>(null)
   const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>([])
 
   // Pre-fill form with user data if logged in
@@ -134,24 +137,44 @@ export default function CheckoutPage({ showToast, updateCartCount, navigateTo }:
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setPaymentError(null)
+
+    // "MM/YY" or "MM/YYYY"
+    const match = card.expiry.trim().match(/^(\d{1,2})\s*\/\s*(\d{2}|\d{4})$/)
+    if (!match) {
+      setPaymentError('Enter the expiry date as MM/YY')
+      return
+    }
+
     setSubmitting(true)
 
     try {
       const response = await fetch('/api/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...formData, shippingMethod, ...(appliedPromo ? { promoCode: appliedPromo } : {}) }),
+        body: JSON.stringify({
+          ...formData,
+          shippingMethod,
+          ...(appliedPromo ? { promoCode: appliedPromo } : {}),
+          card: { number: card.number, expMonth: Number(match[1]), expYear: Number(match[2]), cvc: card.cvc },
+        }),
       })
 
       if (response.ok) {
         const order = await response.json()
         showToast(`Order placed successfully! Order ID: ${order.id}`, 'success')
         setFormData({ customerName: '', customerEmail: '', customerAddress: '' })
+        setCard({ number: '', expiry: '', cvc: '' })
         updateCartCount()
         navigateTo('home')
       } else {
         const error = await response.json()
-        showToast(error.error || 'Failed to place order', 'error')
+        // Payment problems are shown next to the card fields, with the cart kept
+        if (response.status === 402 || /^(Card|Expiry|Security)/.test(error.error ?? '')) {
+          setPaymentError(error.error)
+        } else {
+          showToast(error.error || 'Failed to place order', 'error')
+        }
       }
     } catch (error) {
       showToast('Failed to place order', 'error')
@@ -337,6 +360,67 @@ export default function CheckoutPage({ showToast, updateCartCount, navigateTo }:
               </p>
             )}
           </div>
+
+          <fieldset data-testid="payment-section">
+            <legend className="label">Payment</legend>
+            <p className="mb-4 border border-mist-300 bg-mist-50 px-4 py-3 font-mono text-[11px] leading-relaxed text-ink-600">
+              Test mode: no real money moves. Use 4242 4242 4242 4242 to pay, 4000 0000 0000 0002 to be declined,
+              4000 0000 0000 9995 for insufficient funds, 4000 0000 0000 0119 for a processing error and
+              4000 0000 0000 0341 for a timeout. Any future expiry date and any 3-digit code.
+            </p>
+            <div className="grid gap-4 sm:grid-cols-3">
+              <div className="sm:col-span-3">
+                <label htmlFor="cardNumber" className="label">Card number</label>
+                <input
+                  id="cardNumber"
+                  data-testid="card-number-input"
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete="cc-number"
+                  value={card.number}
+                  onChange={(e) => setCard({ ...card, number: formatCardNumberInput(e.target.value) })}
+                  required
+                  className="input num"
+                  placeholder="4242 4242 4242 4242"
+                />
+              </div>
+              <div>
+                <label htmlFor="cardExpiry" className="label">Expiry (MM/YY)</label>
+                <input
+                  id="cardExpiry"
+                  data-testid="card-expiry-input"
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete="cc-exp"
+                  value={card.expiry}
+                  onChange={(e) => setCard({ ...card, expiry: e.target.value.slice(0, 7) })}
+                  required
+                  className="input num"
+                  placeholder="12/30"
+                />
+              </div>
+              <div>
+                <label htmlFor="cardCvc" className="label">Security code</label>
+                <input
+                  id="cardCvc"
+                  data-testid="card-cvc-input"
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete="cc-csc"
+                  value={card.cvc}
+                  onChange={(e) => setCard({ ...card, cvc: e.target.value.replace(/\D/g, '').slice(0, 4) })}
+                  required
+                  className="input num"
+                  placeholder="123"
+                />
+              </div>
+            </div>
+            {paymentError && (
+              <p data-testid="payment-error" role="alert" className="mt-3 border-2 border-danger bg-danger-soft px-4 py-3 text-sm font-semibold text-danger">
+                {paymentError}
+              </p>
+            )}
+          </fieldset>
 
           <div className="flex flex-col-reverse gap-3 pt-4 sm:flex-row">
             <button
