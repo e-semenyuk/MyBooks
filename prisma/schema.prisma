@@ -49,9 +49,12 @@ model Book {
   updatedAt     DateTime    @updatedAt
   orderItems    OrderItem[]
   cartItems     CartItem[]
+  categories    BookCategory[]
 
   @@index([title])
   @@index([author])
+  @@index([priceCents])
+  @@index([createdAt])
 }
 
 // A cart item belongs to a signed-in user or to a guest session, never both.
@@ -124,4 +127,24 @@ model OrderEvent {
 
   @@index([orderId])
   @@map("order_events")
+}
+
+model Category {
+  id    Int            @id @default(autoincrement())
+  name  String         @unique
+  slug  String         @unique
+  books BookCategory[]
+
+  @@map("categories")
+}
+
+model BookCategory {
+  bookId     Int
+  categoryId Int
+  book       Book     @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+
+  @@id([bookId, categoryId])
+  @@index([categoryId])
+  @@map("book_categories")
 }

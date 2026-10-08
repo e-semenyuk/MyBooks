@@ -61,6 +61,12 @@ export function errorResponse(error: unknown): NextResponse {
     if (error.code === 'P2025') {
       return NextResponse.json({ error: 'Not found', code: 'NOT_FOUND' }, { status: 404 })
     }
+    if (error.code === 'P2003') {
+      return NextResponse.json(
+        { error: 'A referenced item does not exist', code: 'INVALID_REFERENCE' },
+        { status: 400 }
+      )
+    }
     if (error.code === 'P2002') {
       return NextResponse.json({ error: 'Already exists', code: 'CONFLICT' }, { status: 409 })
     }

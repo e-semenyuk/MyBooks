@@ -2,12 +2,35 @@ import type { Book as BookRow } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import { mapBook } from '@/lib/mappers'
 import { toCents } from '@/lib/money'
-import { Book, CreateBookRequest, UpdateBookRequest } from '@/types'
+import { Book, CreateBookRequest, PagedBooks, UpdateBookRequest } from '@/types'
+import type { Prisma } from '@prisma/client'
+import type { BookSort } from '@/lib/validation/schemas'
+
+const withCategories = { categories: { include: { category: true } } } satisfies Prisma.BookInclude
+
+export interface BookListFilters {
+  query?: string
+  category?: string
+  author?: string
+  minPrice?: number
+  maxPrice?: number
+  sort: BookSort
+  page: number
+  pageSize: number
+}
+
+const ORDER_BY: Record<BookSort, Prisma.BookOrderByWithRelationInput[]> = {
+  title: [{ title: 'asc' }, { id: 'asc' }],
+  price_asc: [{ priceCents: 'asc' }, { title: 'asc' }],
+  price_desc: [{ priceCents: 'desc' }, { title: 'asc' }],
+  newest: [{ createdAt: 'desc' }, { id: 'desc' }],
+}
 
 export class BookService {
   static async getAllBooks(): Promise<Book[]> {
     const rows = await prisma.book.findMany({
       orderBy: { title: 'asc' },
+      include: withCategories,
     })
     return rows.map(mapBook)
   }
@@ -15,6 +38,7 @@ export class BookService {
   static async getBookById(id: number): Promise<Book | null> {
     const row = await prisma.book.findUnique({
       where: { id },
+      include: withCategories,
     })
     return row ? mapBook(row) : null
   }
@@ -27,30 +51,65 @@ export class BookService {
     return new Map(rows.map((row) => [row.id, row]))
   }
 
+  // ISBNs are stored with hyphens; people type them with or without
+  private static async isbnMatchIds(query: string): Promise<number[]> {
+    const compact = query.replace(/[\s-]/g, '')
+    if (!/^[0-9Xx]{4,}$/.test(compact)) return []
+    const rows = await prisma.$queryRaw<{ id: number }[]>`
+      SELECT "id" FROM "Book" WHERE REPLACE("isbn", '-', '') ILIKE ${'%' + compact + '%'}`
+    return rows.map((row) => row.id)
+  }
+
   static async searchBooks(query: string): Promise<Book[]> {
     if (!query || query.trim() === '') {
       return this.getAllBooks()
     }
+    const result = await this.listBooks({ query, sort: 'title', page: 1, pageSize: 100 })
+    return result.items
+  }
 
-    // ISBNs are stored with hyphens; people type them with or without
-    const compact = query.replace(/[\s-]/g, '')
-    const isbnMatches = /^[0-9Xx]{4,}$/.test(compact)
-      ? await prisma.$queryRaw<{ id: number }[]>`
-          SELECT "id" FROM "Book" WHERE REPLACE("isbn", '-', '') ILIKE ${'%' + compact + '%'}`
-      : []
+  // Filtered, sorted, paged catalog. A page past the end returns the last page.
+  static async listBooks(filters: BookListFilters): Promise<PagedBooks> {
+    const and: Prisma.BookWhereInput[] = []
+
+    if (filters.query) {
+      const ids = await this.isbnMatchIds(filters.query)
+      and.push({
+        OR: [
+          { title: { contains: filters.query, mode: 'insensitive' } },
+          { author: { contains: filters.query, mode: 'insensitive' } },
+          { isbn: { contains: filters.query, mode: 'insensitive' } },
+          { id: { in: ids } },
+        ],
+      })
+    }
+    if (filters.category) {
+      and.push({ categories: { some: { category: { slug: filters.category } } } })
+    }
+    if (filters.author) {
+      and.push({ author: { contains: filters.author, mode: 'insensitive' } })
+    }
+    if (filters.minPrice !== undefined) {
+      and.push({ priceCents: { gte: toCents(filters.minPrice) } })
+    }
+    if (filters.maxPrice !== undefined) {
+      and.push({ priceCents: { lte: toCents(filters.maxPrice) } })
+    }
+
+    const where: Prisma.BookWhereInput = and.length ? { AND: and } : {}
+    const total = await prisma.book.count({ where })
+    const totalPages = Math.max(1, Math.ceil(total / filters.pageSize))
+    const page = Math.min(filters.page, totalPages)
 
     const rows = await prisma.book.findMany({
-      where: {
-        OR: [
-          { title: { contains: query, mode: 'insensitive' } },
-          { author: { contains: query, mode: 'insensitive' } },
-          { isbn: { contains: query, mode: 'insensitive' } },
-          { id: { in: isbnMatches.map((match) => match.id) } },
-        ],
-      },
-      orderBy: { title: 'asc' },
+      where,
+      orderBy: ORDER_BY[filters.sort],
+      skip: (page - 1) * filters.pageSize,
+      take: filters.pageSize,
+      include: withCategories,
     })
-    return rows.map(mapBook)
+
+    return { items: rows.map(mapBook), total, page, pageSize: filters.pageSize, totalPages }
   }
 
   static async getAvailableBooks(): Promise<Book[]> {
@@ -65,21 +124,31 @@ export class BookService {
 
   // Throws RangeError when the price is negative, not finite or too large.
   static async createBook(data: CreateBookRequest): Promise<Book> {
-    const { price, ...rest } = data
+    const { price, categoryIds, ...rest } = data
     const row = await prisma.book.create({
-      data: { ...rest, priceCents: toCents(price) },
+      data: {
+        ...rest,
+        priceCents: toCents(price),
+        categories: { create: (categoryIds ?? []).map((categoryId) => ({ categoryId })) },
+      },
+      include: withCategories,
     })
     return mapBook(row)
   }
 
   static async updateBook(id: number, data: UpdateBookRequest): Promise<Book> {
-    const { price, ...rest } = data
+    const { price, categoryIds, ...rest } = data
     const row = await prisma.book.update({
       where: { id },
       data: {
         ...rest,
         ...(price !== undefined ? { priceCents: toCents(price) } : {}),
+        // Sending categoryIds replaces the whole set; leaving it out keeps it
+        ...(categoryIds !== undefined
+          ? { categories: { deleteMany: {}, create: categoryIds.map((categoryId) => ({ categoryId })) } }
+          : {}),
       },
+      include: withCategories,
     })
     return mapBook(row)
   }

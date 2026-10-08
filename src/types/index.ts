@@ -1,6 +1,16 @@
 import type { OrderStatus } from '@/lib/orderStatus'
 
 // Database Models
+export interface Category {
+  id: number
+  name: string
+  slug: string
+}
+
+export interface CategoryWithCount extends Category {
+  bookCount: number
+}
+
 export interface Book {
   id: number
   title: string
@@ -9,8 +19,17 @@ export interface Book {
   price: number
   description: string | null
   stockQuantity: number
+  categories?: Category[]
   createdAt?: Date
   updatedAt?: Date
+}
+
+export interface PagedBooks {
+  items: Book[]
+  total: number
+  page: number
+  pageSize: number
+  totalPages: number
 }
 
 export interface CartItem {
@@ -64,6 +83,7 @@ export interface CreateBookRequest {
   price: number
   description?: string
   stockQuantity: number
+  categoryIds?: number[]
 }
 
 export interface UpdateBookRequest {
@@ -73,6 +93,7 @@ export interface UpdateBookRequest {
   price?: number
   description?: string
   stockQuantity?: number
+  categoryIds?: number[]
 }
 
 export interface AddToCartRequest {

@@ -9,7 +9,14 @@ interface AdminPageProps {
   showToast: (message: string, type: 'success' | 'error') => void
 }
 
-type Tab = 'books' | 'orders'
+type Tab = 'books' | 'orders' | 'categories'
+
+interface CategoryRow {
+  id: number
+  name: string
+  slug: string
+  bookCount: number
+}
 
 interface Book {
   id: number
@@ -19,6 +26,7 @@ interface Book {
   price: number
   description?: string
   stockQuantity: number
+  categories?: { id: number; name: string; slug: string }[]
 }
 
 interface Order {
@@ -38,19 +46,27 @@ export default function AdminPage({ showToast }: AdminPageProps) {
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(false)
   const [editingBook, setEditingBook] = useState<Book | null>(null)
-  
-  const [bookForm, setBookForm] = useState({
+  const [categories, setCategories] = useState<CategoryRow[]>([])
+  const [newCategory, setNewCategory] = useState('')
+  const [renaming, setRenaming] = useState<{ id: number; name: string } | null>(null)
+
+  const emptyForm = {
     title: '',
     author: '',
     isbn: '',
     price: '',
     description: '',
     stockQuantity: '',
-  })
+    categoryIds: [] as number[],
+  }
+  const [bookForm, setBookForm] = useState(emptyForm)
 
   useEffect(() => {
     if (activeTab === 'books') {
       loadBooks()
+      loadCategories()
+    } else if (activeTab === 'categories') {
+      loadCategories()
     } else {
       loadOrders()
     }
@@ -59,13 +75,79 @@ export default function AdminPage({ showToast }: AdminPageProps) {
   const loadBooks = async () => {
     setLoading(true)
     try {
-      const response = await fetch('/api/books')
-      const data = await response.json()
-      setBooks(data)
+      // The catalog API is paged; the admin list walks every page
+      const all: Book[] = []
+      let page = 1
+      let totalPages = 1
+      do {
+        const response = await fetch(`/api/books?pageSize=100&page=${page}`)
+        if (!response.ok) throw new Error('Request failed')
+        const data = await response.json()
+        all.push(...data.items)
+        totalPages = data.totalPages
+        page += 1
+      } while (page <= totalPages)
+      setBooks(all)
     } catch (error) {
       showToast('Failed to load books', 'error')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const loadCategories = async () => {
+    try {
+      const response = await fetch('/api/categories')
+      if (response.ok) setCategories(await response.json())
+    } catch (error) {
+      showToast('Failed to load categories', 'error')
+    }
+  }
+
+  const handleCreateCategory = async (e: React.FormEvent) => {
+    e.preventDefault()
+    const response = await fetch('/api/categories', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: newCategory }),
+    })
+    if (response.ok) {
+      showToast('Category added successfully', 'success')
+      setNewCategory('')
+      loadCategories()
+    } else {
+      const error = await response.json().catch(() => null)
+      showToast(error?.error || 'Failed to add category', 'error')
+    }
+  }
+
+  const handleRenameCategory = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!renaming) return
+    const response = await fetch(`/api/categories/${renaming.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: renaming.name }),
+    })
+    if (response.ok) {
+      showToast('Category updated successfully', 'success')
+      setRenaming(null)
+      loadCategories()
+    } else {
+      const error = await response.json().catch(() => null)
+      showToast(error?.error || 'Failed to rename category', 'error')
+    }
+  }
+
+  const handleDeleteCategory = async (id: number) => {
+    if (!confirm('Are you sure you want to delete this category?')) return
+    const response = await fetch(`/api/categories/${id}`, { method: 'DELETE' })
+    if (response.ok) {
+      showToast('Category deleted successfully', 'success')
+      loadCategories()
+    } else {
+      const error = await response.json().catch(() => null)
+      showToast(error?.error || 'Failed to delete category', 'error')
     }
   }
 
@@ -96,12 +178,13 @@ export default function AdminPage({ showToast }: AdminPageProps) {
           ...bookForm,
           price: parseFloat(bookForm.price),
           stockQuantity: parseInt(bookForm.stockQuantity),
+          categoryIds: bookForm.categoryIds,
         }),
       })
 
       if (response.ok) {
         showToast(editingBook ? 'Book updated successfully' : 'Book added successfully', 'success')
-        setBookForm({ title: '', author: '', isbn: '', price: '', description: '', stockQuantity: '' })
+        setBookForm(emptyForm)
         setEditingBook(null)
         loadBooks()
       } else {
@@ -122,6 +205,7 @@ export default function AdminPage({ showToast }: AdminPageProps) {
       price: book.price.toString(),
       description: book.description || '',
       stockQuantity: book.stockQuantity.toString(),
+      categoryIds: (book.categories ?? []).map((category) => category.id),
     })
   }
 
@@ -176,7 +260,7 @@ export default function AdminPage({ showToast }: AdminPageProps) {
 
   const resetForm = () => {
     setEditingBook(null)
-    setBookForm({ title: '', author: '', isbn: '', price: '', description: '', stockQuantity: '' })
+    setBookForm(emptyForm)
   }
 
   const tabClass = (tab: Tab) =>
@@ -210,6 +294,15 @@ export default function AdminPage({ showToast }: AdminPageProps) {
           className={`${tabClass('orders')} border-l-2 border-ink-950`}
         >
           Orders ({orders.length})
+        </button>
+        <button
+          data-testid="admin-categories-tab"
+          role="tab"
+          aria-selected={activeTab === 'categories'}
+          onClick={() => setActiveTab('categories')}
+          className={`${tabClass('categories')} border-l-2 border-ink-950`}
+        >
+          Categories
         </button>
       </div>
 
@@ -303,6 +396,33 @@ export default function AdminPage({ showToast }: AdminPageProps) {
                   />
                 </div>
 
+                {categories.length > 0 && (
+                  <fieldset data-testid="admin-book-categories">
+                    <legend className="label">Categories</legend>
+                    <div className="grid grid-cols-2 gap-x-3 gap-y-2">
+                      {categories.map((category) => (
+                        <label key={category.id} className="flex items-center gap-2 text-sm text-ink-800">
+                          <input
+                            data-testid={`admin-book-category-${category.slug}`}
+                            type="checkbox"
+                            checked={bookForm.categoryIds.includes(category.id)}
+                            onChange={(e) =>
+                              setBookForm({
+                                ...bookForm,
+                                categoryIds: e.target.checked
+                                  ? [...bookForm.categoryIds, category.id]
+                                  : bookForm.categoryIds.filter((id) => id !== category.id),
+                              })
+                            }
+                            className="h-4 w-4 accent-cobalt-500"
+                          />
+                          {category.name}
+                        </label>
+                      ))}
+                    </div>
+                  </fieldset>
+                )}
+
                 <div className="flex gap-2 pt-2">
                   <button data-testid="admin-save-book-button" type="submit" className="btn btn-primary flex-1">
                     {editingBook ? 'Update Book' : 'Add Book'}
@@ -345,6 +465,11 @@ export default function AdminPage({ showToast }: AdminPageProps) {
                         {book.title}
                       </h4>
                       <p className="text-sm text-ink-600">by {book.author}</p>
+                      {book.categories && book.categories.length > 0 && (
+                        <p className="mt-1 font-mono text-[11px] uppercase tracking-[0.1em] text-ink-500">
+                          {book.categories.map((category) => category.name).join(' / ')}
+                        </p>
+                      )}
                       {book.isbn && <p className="mt-1 font-mono text-xs text-ink-500">ISBN {book.isbn}</p>}
                       {book.description && (
                         <p className="mt-2 line-clamp-2 text-sm text-ink-600">{book.description}</p>
@@ -384,6 +509,93 @@ export default function AdminPage({ showToast }: AdminPageProps) {
                 ))}
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'categories' && (
+        <div data-testid="admin-categories-section" className="grid items-start gap-12 lg:grid-cols-3">
+          <div className="border-2 border-ink-950 lg:col-span-1">
+            <div className="bg-ink-950 px-6 py-4">
+              <h3 className="font-display text-xl font-bold tracking-tight text-white">Add Category</h3>
+            </div>
+            <form data-testid="admin-category-form" onSubmit={handleCreateCategory} className="space-y-4 p-6">
+              <div>
+                <label htmlFor="category-name" className="label">Name *</label>
+                <input
+                  id="category-name"
+                  data-testid="admin-category-name-input"
+                  type="text"
+                  value={newCategory}
+                  onChange={(e) => setNewCategory(e.target.value)}
+                  required
+                  maxLength={60}
+                  className="input"
+                />
+              </div>
+              <button data-testid="admin-category-add-button" type="submit" className="btn btn-primary w-full">
+                Add Category
+              </button>
+            </form>
+          </div>
+
+          <div data-testid="admin-categories-list" className="border-t-2 border-ink-950 lg:col-span-2">
+            {categories.map((category) => (
+              <div
+                key={category.id}
+                data-testid={`admin-category-item-${category.id}`}
+                className="flex flex-wrap items-center justify-between gap-4 border-b border-mist-200 py-4"
+              >
+                {renaming?.id === category.id ? (
+                  <form onSubmit={handleRenameCategory} className="flex flex-1 flex-wrap items-center gap-2">
+                    <label htmlFor={`rename-${category.id}`} className="sr-only">New name</label>
+                    <input
+                      id={`rename-${category.id}`}
+                      data-testid={`admin-category-rename-input-${category.id}`}
+                      type="text"
+                      value={renaming.name}
+                      onChange={(e) => setRenaming({ id: category.id, name: e.target.value })}
+                      required
+                      maxLength={60}
+                      className="input w-64"
+                    />
+                    <button data-testid={`admin-category-save-${category.id}`} type="submit" className="btn btn-primary btn-sm">
+                      Save
+                    </button>
+                    <button type="button" onClick={() => setRenaming(null)} className="btn btn-secondary btn-sm">
+                      Cancel
+                    </button>
+                  </form>
+                ) : (
+                  <>
+                    <div>
+                      <p className="font-display text-xl font-bold tracking-tight text-ink-950">{category.name}</p>
+                      <p className="font-mono text-xs text-ink-500">
+                        {category.slug} / {category.bookCount} {category.bookCount === 1 ? 'book' : 'books'}
+                      </p>
+                    </div>
+                    <div className="flex gap-1">
+                      <button
+                        data-testid={`admin-category-rename-${category.id}`}
+                        onClick={() => setRenaming({ id: category.id, name: category.name })}
+                        aria-label={`Rename ${category.name}`}
+                        className="p-2 text-ink-950 transition-colors hover:bg-ink-950 hover:text-white"
+                      >
+                        <EditIcon className="h-5 w-5" />
+                      </button>
+                      <button
+                        data-testid={`admin-category-delete-${category.id}`}
+                        onClick={() => handleDeleteCategory(category.id)}
+                        aria-label={`Delete ${category.name}`}
+                        className="p-2 text-danger transition-colors hover:bg-danger hover:text-white"
+                      >
+                        <TrashIcon className="h-5 w-5" />
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            ))}
           </div>
         </div>
       )}

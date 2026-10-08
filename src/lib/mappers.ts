@@ -3,6 +3,7 @@ import type {
   Order as OrderRow,
   OrderItem as OrderItemRow,
   OrderEvent,
+  Category,
 } from '@prisma/client'
 import { fromCents } from '@/lib/money'
 import type { Book, Order, OrderItem, OrderItemWithBook, OrderWithItems } from '@/types'
@@ -10,9 +11,15 @@ import type { Book, Order, OrderItem, OrderItemWithBook, OrderWithItems } from '
 // Database rows hold integer cents. The public API keeps dollars so clients
 // do not change when the storage format does.
 
-export function mapBook(row: BookRow): Book {
-  const { priceCents, ...rest } = row
-  return { ...rest, price: fromCents(priceCents) }
+type BookRowWithCategories = BookRow & { categories?: { category: Category }[] }
+
+export function mapBook(row: BookRowWithCategories): Book {
+  const { priceCents, categories, ...rest } = row
+  return {
+    ...rest,
+    price: fromCents(priceCents),
+    ...(categories ? { categories: categories.map((link) => link.category).sort((a, b) => a.name.localeCompare(b.name)) } : {}),
+  }
 }
 
 type ItemRow = OrderItemRow & { book?: BookRow }

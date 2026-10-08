@@ -25,6 +25,7 @@ export const createBookSchema = z.object({
   price: money,
   description: z.string().max(5000, 'Description must be at most 5000 characters').nullish().transform((v) => v ?? undefined),
   stockQuantity: stock,
+  categoryIds: z.array(z.number().int().positive()).max(10, 'At most 10 categories').optional(),
 })
 
 export const updateBookSchema = createBookSchema
@@ -83,4 +84,45 @@ export const orderFilterSchema = z.object({
   email: z.string().optional(),
   status: z.string().optional(),
   userId: z.coerce.number().int().positive().optional(),
+})
+
+export const BOOK_SORTS = ['title', 'price_asc', 'price_desc', 'newest'] as const
+export type BookSort = (typeof BOOK_SORTS)[number]
+
+const optionalText = z
+  .string()
+  .trim()
+  .max(200)
+  .optional()
+  .transform((v) => (v ? v : undefined))
+
+// Query string of GET /api/books. Everything is optional; page numbers beyond
+// the last page are clamped by the service, not rejected.
+export const bookListQuerySchema = z
+  .object({
+    query: optionalText,
+    category: optionalText,
+    author: optionalText,
+    minPrice: z.coerce.number().min(0, 'Minimum price must not be negative').max(100000).optional(),
+    maxPrice: z.coerce.number().min(0, 'Maximum price must not be negative').max(100000).optional(),
+    sort: z.enum(BOOK_SORTS).default('title'),
+    page: z.coerce.number().int('Page must be a whole number').min(1, 'Page must be at least 1').default(1),
+    pageSize: z.coerce
+      .number()
+      .int('Page size must be a whole number')
+      .min(1, 'Page size must be at least 1')
+      .max(100, 'Page size must be at most 100')
+      .default(12),
+  })
+  .refine(
+    (q) => q.minPrice === undefined || q.maxPrice === undefined || q.minPrice <= q.maxPrice,
+    { message: 'Minimum price must not be above maximum price', path: ['minPrice'] }
+  )
+
+export const categorySchema = z.object({
+  name: z
+    .string({ error: 'Category name is required' })
+    .trim()
+    .min(1, 'Category name is required')
+    .max(60, 'Category name must be at most 60 characters'),
 })

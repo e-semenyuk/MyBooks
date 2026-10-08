@@ -4,7 +4,7 @@ Digital bookstore built with Next.js 14 (App Router), TypeScript, Prisma and Pos
 
 ## What it does
 
-- Browse and search books by title, author or ISBN
+- Browse the catalog with categories, filters (category, author, price), sorting and pages; the state is in the URL. Search by title, author or ISBN. Every book has a detail page
 - Guest cart that follows you into your account at sign-in; stock is checked when you add items
 - Checkout creates an order (status flow PENDING → CONFIRMED → SHIPPED → DELIVERED, or CANCELLED) and reduces stock
 - Accounts with roles USER and ADMIN; order history and order detail with status history
@@ -49,7 +49,7 @@ npm run dev                       # http://localhost:3000
 | `npm run dev` / `build` / `start` | Next.js |
 | `npm test` | Vitest unit tests |
 | `npm run lint`, `npx tsc --noEmit` | Lint and type check |
-| `npm run db:seed` | Wipe and load the fixed data set |
+| `npm run db:seed` | Wipe and load the fixed data set (38 books, 8 categories) |
 | `npm run db:reset` | Recreate the database from migrations |
 | `npm run openapi` | Regenerate `docs/openapi.json` after API changes (a test fails when it is stale) |
 

@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { Book } from '@/types'
 import BookCover from '@/components/BookCover'
 import { ArrowRightIcon } from '@/components/icons'
@@ -38,7 +39,9 @@ export default function BookCard({ book, onAddToCart }: BookCardProps) {
           data-testid={`book-title-${book.id}`}
           className="mb-1 line-clamp-2 font-display text-2xl font-bold leading-tight tracking-tight text-ink-950 decoration-cobalt-500 decoration-2 underline-offset-4 group-hover:underline"
         >
-          {book.title}
+          <Link href={`/books/${book.id}`} data-testid={`book-link-${book.id}`}>
+            {book.title}
+          </Link>
         </h3>
         <p data-testid={`book-author-${book.id}`} className="mb-4 text-sm font-medium text-ink-600">
           {book.author}

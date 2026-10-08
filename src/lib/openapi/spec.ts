@@ -1,7 +1,9 @@
 import { z } from 'zod'
 import { ORDER_STATUSES } from '@/lib/orderStatus'
 import {
+  BOOK_SORTS,
   addToCartSchema,
+  categorySchema,
   createBookSchema,
   createOrderSchema,
   registerSchema,
@@ -57,6 +59,7 @@ function buildDocument(): Json {
     servers: [{ url: 'http://localhost:3000' }],
     tags: [
       { name: 'Books' },
+      { name: 'Categories' },
       { name: 'Cart' },
       { name: 'Orders' },
       { name: 'Accounts' },
@@ -77,11 +80,23 @@ function buildDocument(): Json {
       '/api/books': {
         get: {
           tags: ['Books'],
-          summary: 'List books, or search by title, author or ISBN',
+          summary: 'Filtered, sorted and paged catalog',
+          description:
+            'All parameters are optional and combine. A page past the last page returns the last page; read `page` in the response.',
           parameters: [
-            { name: 'query', in: 'query', required: false, schema: { type: 'string' }, description: 'ISBN may be typed with or without hyphens' },
+            { name: 'query', in: 'query', required: false, schema: { type: 'string' }, description: 'Matches title, author or ISBN (with or without hyphens)' },
+            { name: 'category', in: 'query', required: false, schema: { type: 'string' }, description: 'Category slug, for example science-fiction' },
+            { name: 'author', in: 'query', required: false, schema: { type: 'string' }, description: 'Part of the author name' },
+            { name: 'minPrice', in: 'query', required: false, schema: { type: 'number', minimum: 0 }, description: 'Dollars' },
+            { name: 'maxPrice', in: 'query', required: false, schema: { type: 'number', minimum: 0 }, description: 'Dollars; must not be below minPrice' },
+            { name: 'sort', in: 'query', required: false, schema: { type: 'string', enum: [...BOOK_SORTS], default: 'title' } },
+            { name: 'page', in: 'query', required: false, schema: { type: 'integer', minimum: 1, default: 1 } },
+            { name: 'pageSize', in: 'query', required: false, schema: { type: 'integer', minimum: 1, maximum: 100, default: 12 } },
           ],
-          responses: { '200': { description: 'Books ordered by title', content: jsonContent({ type: 'array', items: ref('Book') }) } },
+          responses: {
+            '200': { description: 'One page of books', content: jsonContent(ref('PagedBooks')) },
+            '400': errorResponse('VALIDATION_ERROR'),
+          },
         },
         post: {
           tags: ['Books'],
@@ -110,6 +125,53 @@ function buildDocument(): Json {
           summary: 'Delete a book (admin). Its cart items are removed too.',
           security: [{ sessionCookie: [] }],
           responses: { '200': { description: 'Deleted', content: jsonContent({ type: 'object', properties: { message: { type: 'string' } } }) }, '400': standardErrors['400'], ...authErrors, '404': errorResponse('NOT_FOUND') },
+        },
+      },
+      '/api/categories': {
+        get: {
+          tags: ['Categories'],
+          summary: 'All categories with the number of books in each',
+          responses: { '200': { description: 'Categories ordered by name', content: jsonContent({ type: 'array', items: ref('CategoryWithCount') }) } },
+        },
+        post: {
+          tags: ['Categories'],
+          summary: 'Create a category (admin). The slug is made from the name.',
+          security: [{ sessionCookie: [] }],
+          requestBody: { required: true, content: jsonContent(body(categorySchema)) },
+          responses: {
+            '201': { description: 'Created', content: jsonContent(ref('Category')) },
+            '400': errorResponse('VALIDATION_ERROR or INVALID_CATEGORY_NAME'),
+            ...authErrors,
+            '409': errorResponse('CATEGORY_EXISTS'),
+          },
+        },
+      },
+      '/api/categories/{id}': {
+        parameters: [idParam('Category id')],
+        put: {
+          tags: ['Categories'],
+          summary: 'Rename a category (admin)',
+          security: [{ sessionCookie: [] }],
+          requestBody: { required: true, content: jsonContent(body(categorySchema)) },
+          responses: {
+            '200': { description: 'Renamed', content: jsonContent(ref('Category')) },
+            '400': errorResponse('VALIDATION_ERROR, INVALID_ID or INVALID_CATEGORY_NAME'),
+            ...authErrors,
+            '404': errorResponse('CATEGORY_NOT_FOUND'),
+            '409': errorResponse('CATEGORY_EXISTS'),
+          },
+        },
+        delete: {
+          tags: ['Categories'],
+          summary: 'Delete a category (admin). Refused while any book uses it.',
+          security: [{ sessionCookie: [] }],
+          responses: {
+            '200': { description: 'Deleted', content: jsonContent({ type: 'object', properties: { message: { type: 'string' } } }) },
+            '400': standardErrors['400'],
+            ...authErrors,
+            '404': errorResponse('CATEGORY_NOT_FOUND'),
+            '409': errorResponse('CATEGORY_IN_USE'),
+          },
         },
       },
       '/api/cart': {
@@ -231,7 +293,7 @@ function buildDocument(): Json {
       '/api/test/seed': {
         post: {
           tags: ['Test support'],
-          summary: 'Remove all data and load the fixed data set (12 books, admin from ADMIN_EMAIL/ADMIN_PASSWORD, optional USER_EMAIL/USER_PASSWORD)',
+          summary: 'Remove all data and load the fixed data set (38 books in 8 categories, admin from ADMIN_EMAIL/ADMIN_PASSWORD, optional USER_EMAIL/USER_PASSWORD)',
           parameters: [{ name: 'x-test-secret', in: 'header', required: true, schema: { type: 'string' } }],
           responses: { '200': { description: 'Counts', content: jsonContent({ type: 'object', properties: { books: { type: 'integer' }, users: { type: 'integer' } } }) }, '400': errorResponse('SEED_CONFIG'), '404': errorResponse('Disabled or wrong secret') },
         },
@@ -259,6 +321,25 @@ function buildDocument(): Json {
             role: { type: 'string', enum: ['USER', 'ADMIN'] }, createdAt: { type: 'string', format: 'date-time' },
           },
         },
+        Category: {
+          type: 'object',
+          required: ['id', 'name', 'slug'],
+          properties: { id: { type: 'integer' }, name: { type: 'string' }, slug: { type: 'string' } },
+        },
+        CategoryWithCount: {
+          allOf: [ref('Category'), { type: 'object', properties: { bookCount: { type: 'integer', minimum: 0 } } }],
+        },
+        PagedBooks: {
+          type: 'object',
+          required: ['items', 'total', 'page', 'pageSize', 'totalPages'],
+          properties: {
+            items: { type: 'array', items: ref('Book') },
+            total: { type: 'integer', description: 'Books matching the filters, across all pages' },
+            page: { type: 'integer', description: 'The page returned (clamped to the last page)' },
+            pageSize: { type: 'integer' },
+            totalPages: { type: 'integer', minimum: 1 },
+          },
+        },
         Book: {
           type: 'object',
           required: ['id', 'title', 'author', 'price', 'stockQuantity'],
@@ -266,6 +347,7 @@ function buildDocument(): Json {
             id: { type: 'integer' }, title: { type: 'string' }, author: { type: 'string' },
             isbn: { type: ['string', 'null'] }, price: { type: 'number', description: 'Dollars, two decimals' },
             description: { type: ['string', 'null'] }, stockQuantity: { type: 'integer', minimum: 0 },
+            categories: { type: 'array', items: ref('Category') },
             createdAt: { type: 'string', format: 'date-time' }, updatedAt: { type: 'string', format: 'date-time' },
           },
         },
@@ -316,6 +398,10 @@ const OPERATION_IDS: Record<string, string> = {
   'get /api/books/{id}': 'getBook',
   'put /api/books/{id}': 'updateBook',
   'delete /api/books/{id}': 'deleteBook',
+  'get /api/categories': 'listCategories',
+  'post /api/categories': 'createCategory',
+  'put /api/categories/{id}': 'renameCategory',
+  'delete /api/categories/{id}': 'deleteCategory',
   'get /api/cart': 'getCart',
   'post /api/cart': 'addToCart',
   'delete /api/cart': 'clearCart',

@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import {
   addToCartSchema,
+  bookListQuerySchema,
+  categorySchema,
   createBookSchema,
   createOrderSchema,
   registerSchema,
@@ -99,5 +101,72 @@ describe('registerSchema', () => {
     expect(firstMessage(registerSchema.safeParse({ ...valid, email: 'not-an-email' }))).toBe(
       'Email is not valid'
     )
+  })
+})
+
+describe('bookListQuerySchema', () => {
+  it('fills in defaults', () => {
+    expect(bookListQuerySchema.parse({})).toEqual({ sort: 'title', page: 1, pageSize: 12 })
+  })
+
+  it('reads numbers from the query string and drops empty text', () => {
+    const parsed = bookListQuerySchema.parse({
+      query: '  dune ',
+      category: '',
+      minPrice: '10',
+      maxPrice: '20.5',
+      sort: 'price_desc',
+      page: '3',
+      pageSize: '24',
+    })
+    expect(parsed).toEqual({
+      query: 'dune',
+      category: undefined,
+      author: undefined,
+      minPrice: 10,
+      maxPrice: 20.5,
+      sort: 'price_desc',
+      page: 3,
+      pageSize: 24,
+    })
+  })
+
+  it.each([
+    [{ sort: 'cheapest' }, 'sort'],
+    [{ page: '0' }, 'Page must be at least 1'],
+    [{ page: '1.5' }, 'Page must be a whole number'],
+    [{ pageSize: '101' }, 'Page size must be at most 100'],
+    [{ minPrice: '-1' }, 'Minimum price must not be negative'],
+    [{ minPrice: '20', maxPrice: '5' }, 'Minimum price must not be above maximum price'],
+  ])('rejects %j', (input, fragment) => {
+    const result = bookListQuerySchema.safeParse(input)
+    expect(result.success).toBe(false)
+    expect(JSON.stringify(result.error?.issues)).toContain(fragment)
+  })
+})
+
+describe('categorySchema', () => {
+  it('trims the name', () => {
+    expect(categorySchema.parse({ name: '  Poetry ' })).toEqual({ name: 'Poetry' })
+  })
+
+  it('rejects empty and overlong names', () => {
+    expect(categorySchema.safeParse({ name: '   ' }).success).toBe(false)
+    expect(categorySchema.safeParse({ name: 'x'.repeat(61) }).success).toBe(false)
+    expect(categorySchema.safeParse({}).success).toBe(false)
+  })
+})
+
+describe('createBookSchema categories', () => {
+  const base = { title: 'T', author: 'A', price: 1, stockQuantity: 1 }
+
+  it('accepts a list of category ids', () => {
+    expect(createBookSchema.parse({ ...base, categoryIds: [1, 2] }).categoryIds).toEqual([1, 2])
+  })
+
+  it('rejects bad ids and too many categories', () => {
+    expect(createBookSchema.safeParse({ ...base, categoryIds: [0] }).success).toBe(false)
+    expect(createBookSchema.safeParse({ ...base, categoryIds: [1.5] }).success).toBe(false)
+    expect(createBookSchema.safeParse({ ...base, categoryIds: Array.from({ length: 11 }, (_, i) => i + 1) }).success).toBe(false)
   })
 })

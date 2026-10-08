@@ -12,7 +12,7 @@ async function main() {
 
   console.log('Seeding database (all existing data is removed)...')
   const result = await resetAndSeed(prisma, accounts)
-  console.log(`Created ${result.books} books and ${result.users} user(s)`)
+  console.log(`Created ${result.books} books, ${result.categories} categories and ${result.users} user(s)`)
   console.log('Seeding completed!')
 }
 

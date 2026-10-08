@@ -184,6 +184,66 @@ This document provides a comprehensive list of all `data-testid` attributes used
 
 Guests opening a private page are redirected to `/login?callbackUrl=<page>` and return there after signing in.
 
+## Catalog filters and pagination (home page)
+
+State is kept in the URL: `?query=&category=&author=&minPrice=&maxPrice=&sort=&page=`.
+
+| Test ID | Element | Description |
+|---------|---------|-------------|
+| `filters-panel` | `<section>` | Filters container |
+| `category-chips` | `<div>` | Category chip row |
+| `category-chip-all` | `<button>` | Show every category |
+| `category-chip-{slug}` | `<button>` | One category, for example `category-chip-science-fiction`; text includes the book count |
+| `filter-author-input` | `<input>` | Author contains (applied with the Apply button) |
+| `filter-min-price-input` | `<input>` | Minimum price in dollars |
+| `filter-max-price-input` | `<input>` | Maximum price in dollars |
+| `sort-select` | `<select>` | `title`, `price_asc`, `price_desc`, `newest`; applies immediately |
+| `filters-apply-button` | `<button>` | Apply author and price filters |
+| `filters-clear-button` | `<button>` | Remove every filter (shown only when one is active) |
+| `pagination` | `<nav>` | Hidden when there is one page only |
+| `pagination-info` | `<p>` | "Page 2 of 4" |
+| `pagination-prev-button` / `pagination-next-button` | `<button>` | Previous and next page |
+| `pagination-page-{n}` | `<button>` | Jump to page n |
+| `book-link-{id}` | `<a>` | Book title link to `/books/{id}` |
+
+## BookDetailPage (`/books/{id}`)
+
+| Test ID | Element | Description |
+|---------|---------|-------------|
+| `book-detail-page` | `<div>` | Page container |
+| `book-detail-loading` | `<div>` | Loading state |
+| `book-detail-back-link` | `<a>` | Back to the catalog |
+| `book-detail-categories` | `<div>` | Category links container |
+| `book-detail-category-{slug}` | `<a>` | Link to the catalog filtered by that category |
+| `book-detail-title` | `<h2>` | Title |
+| `book-detail-author` | `<p>` | Author |
+| `book-detail-description` | `<p>` | Description |
+| `book-detail-isbn` | `<span>` | ISBN |
+| `book-detail-price` | `<p>` | Price |
+| `book-detail-stock` | `<div>` | Stock badge: In Stock, Only N left, Out of Stock |
+| `book-detail-quantity-input` | `<input>` | Copies to add |
+| `book-detail-add-to-cart-button` | `<button>` | Add to cart |
+
+An unknown or non-numeric id shows the not-found page (`not-found-page`).
+
+## Admin categories
+
+| Test ID | Element | Description |
+|---------|---------|-------------|
+| `admin-categories-tab` | `<button>` | Categories tab |
+| `admin-categories-section` | `<div>` | Tab content |
+| `admin-category-form` | `<form>` | Add category form |
+| `admin-category-name-input` | `<input>` | New category name |
+| `admin-category-add-button` | `<button>` | Add category |
+| `admin-categories-list` | `<div>` | List container |
+| `admin-category-item-{id}` | `<div>` | One category row (shows slug and book count) |
+| `admin-category-rename-{id}` | `<button>` | Start renaming |
+| `admin-category-rename-input-{id}` | `<input>` | New name |
+| `admin-category-save-{id}` | `<button>` | Save the new name |
+| `admin-category-delete-{id}` | `<button>` | Delete; refused with a message while books use it |
+| `admin-book-categories` | `<fieldset>` | Category checkboxes on the book form |
+| `admin-book-category-{slug}` | `<input>` | Category checkbox |
+
 ## Usage Examples
 
 ### Cypress/Playwright Tests
