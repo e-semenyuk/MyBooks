@@ -16,7 +16,7 @@
     "test": "vitest run --passWithNoTests",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "db:migrate:deploy": "prisma migrate deploy",
+    "db:migrate:deploy": "tsx scripts/migrate-deploy.ts",
     "db:reset": "prisma migrate reset --force",
     "openapi": "tsx scripts/generate-openapi.ts"
   },

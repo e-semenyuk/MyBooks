@@ -21,7 +21,14 @@ Later migrations convert prices to cents, make order status an enum, add cart ow
 
 ## Every later release
 
-Run `npx prisma migrate deploy` before or during the deploy, then check `GET /api/health`.
+Migrations run automatically. The Vercel build command is `prisma generate && tsx scripts/migrate-deploy.ts && next build`:
+
+- On production deployments it applies pending migrations over a direct database connection (`POSTGRES_URL_NON_POOLING` if set, otherwise your pooled URL on port 5432 without pgbouncer).
+- Preview deployments skip migrations so they cannot change the shared database.
+- If a migration fails, the build fails and the previous version keeps serving traffic.
+- Write migrations so the previous version of the code still works while they run (add tables and columns first; remove old ones in a later release).
+
+After a deploy, check `GET /api/health` and `GET /api/books`.
 
 ## Troubleshooting
 
