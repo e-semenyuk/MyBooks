@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Link from 'next/link'
 import { useSession } from 'next-auth/react'
 
 interface ProfilePageProps {
@@ -155,6 +156,13 @@ export default function ProfilePage({ showToast }: ProfilePageProps) {
                     <p className="text-sm text-gray-600 uppercase tracking-wide mb-1">Total</p>
                     <p className="text-3xl font-bold text-gradient">${order.totalAmount.toFixed(2)}</p>
                   </div>
+                  <Link
+                    data-testid={`profile-order-view-${order.id}`}
+                    href={`/orders/${order.id}`}
+                    className="text-sm font-semibold text-primary-600 hover:underline"
+                  >
+                    View details
+                  </Link>
                 </div>
 
                 {/* Order Items */}

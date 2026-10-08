@@ -1,15 +1,19 @@
 'use client'
 
 import { useSession, signOut } from 'next-auth/react'
+import { usePathname } from 'next/navigation'
+import { useNavigateTo } from '@/components/providers/AppProviders'
+import { pageFromPath } from '@/lib/routes'
 
 interface NavigationProps {
-  currentPage: string
   cartCount: number
-  onNavigate: (page: 'home' | 'cart' | 'checkout' | 'admin' | 'login' | 'register' | 'profile') => void
 }
 
-export default function Navigation({ currentPage, cartCount, onNavigate }: NavigationProps) {
+export default function Navigation({ cartCount }: NavigationProps) {
   const { data: session, status } = useSession()
+  const pathname = usePathname()
+  const currentPage = pageFromPath(pathname)
+  const onNavigate = useNavigateTo()
   return (
     <nav data-testid="main-navigation" className="bg-gradient-to-r from-primary-600 via-purple-600 to-primary-700 text-white shadow-2xl sticky top-0 z-50 backdrop-blur-lg">
       <div className="container mx-auto px-6">
@@ -113,7 +117,7 @@ export default function Navigation({ currentPage, cartCount, onNavigate }: Navig
                 </button>
                 <button
                   data-testid="nav-logout-button"
-                  onClick={() => signOut()}
+                  onClick={() => signOut({ callbackUrl: '/' })}
                   className="px-5 py-2.5 rounded-xl font-semibold transition-all duration-300 hover:bg-white/15 backdrop-blur-sm"
                 >
                   <span className="flex items-center gap-2">
