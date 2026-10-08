@@ -218,17 +218,14 @@ export default function CartPage({ showToast, updateCartCount, navigateTo }: Car
                   <dt className="text-ink-600">Items ({itemCount})</dt>
                   <dd className="num font-semibold text-ink-950">${total.toFixed(2)}</dd>
                 </div>
-                <div className="flex justify-between">
-                  <dt className="text-ink-600">Shipping</dt>
-                  <dd className="font-semibold text-ink-950">Free</dd>
-                </div>
                 <div className="flex items-baseline justify-between border-t-2 border-ink-950 pt-5">
-                  <dt className="font-semibold text-ink-950">Total</dt>
+                  <dt className="font-semibold text-ink-950">Subtotal</dt>
                   <dd data-testid="cart-total" className="num font-display text-5xl font-extrabold tracking-tight text-ink-950">
                     ${total.toFixed(2)}
                   </dd>
                 </div>
               </dl>
+              <p className="-mt-4 mb-6 text-xs text-ink-500">Shipping, promo codes and tax are added at checkout.</p>
 
               <button
                 data-testid="proceed-to-checkout-button"

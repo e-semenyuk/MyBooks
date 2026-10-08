@@ -49,7 +49,13 @@ export interface Order {
   customerEmail: string
   customerAddress: string
   orderDate: Date
+  subtotal: number
+  discount: number
+  shipping: number
+  tax: number
   totalAmount: number
+  shippingMethod: 'STANDARD' | 'EXPRESS'
+  promoCode: string | null
   status: OrderStatus
   orderItems?: OrderItem[]
   events?: OrderStatusEvent[]
@@ -106,6 +112,8 @@ export interface UpdateCartItemRequest {
 }
 
 export interface CreateOrderRequest {
+  shippingMethod?: 'STANDARD' | 'EXPRESS'
+  promoCode?: string
   customerName: string
   customerEmail: string
   customerAddress: string

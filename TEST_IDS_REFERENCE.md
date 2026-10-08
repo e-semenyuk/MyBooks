@@ -65,15 +65,36 @@ This document provides a comprehensive list of all `data-testid` attributes used
 
 ## CheckoutPage
 
+Checkout needs an account: guests who open `/checkout` are sent to `/login?callbackUrl=/checkout`.
+
 | Test ID | Element | Description |
 |---------|---------|-------------|
-| `checkout-page` | `<div>` | Checkout page container |
-| `checkout-form` | `<form>` | Checkout form |
-| `checkout-name-input` | `<input>` | Customer name input |
-| `checkout-email-input` | `<input>` | Customer email input |
-| `checkout-address-input` | `<textarea>` | Customer address input |
-| `back-to-cart-button` | `<button>` | Back to cart button |
-| `place-order-button` | `<button>` | Place order submit button |
+| `checkout-page` | `<div>` | Page container |
+| `checkout-form` | `<form>` | Whole form including the summary |
+| `checkout-name-input` | `<input>` | Full name (prefilled from the account) |
+| `checkout-email-input` | `<input>` | Email (prefilled) |
+| `checkout-address-input` | `<textarea>` | Delivery address |
+| `shipping-options` | `<fieldset>` | Shipping choices |
+| `shipping-standard` | `<input radio>` | Standard: $4.99, free from $50.00 after discount |
+| `shipping-express` | `<input radio>` | Express: $14.99, never free |
+| `promo-input` | `<input>` | Promo code (case-insensitive) |
+| `promo-apply-button` | `<button>` | Check and apply the code |
+| `promo-error` | `<p>` | "not valid", "has expired" or "has been used up" |
+| `promo-applied` | `<div>` | Shown while a code is applied |
+| `promo-remove-button` | `<button>` | Remove the applied code |
+| `checkout-summary` | `<aside>` | Totals panel |
+| `summary-subtotal` | `<dd>` | Items total |
+| `summary-discount` | `<dd>` | Shown only when a code gives a discount, as `-$x.xx` |
+| `summary-shipping` | `<dd>` | Amount, or "Free" |
+| `summary-tax` | `<dd>` | 8% of the discounted subtotal (`TAX_RATE`) |
+| `summary-total` | `<dd>` | subtotal - discount + shipping + tax |
+| `checkout-empty` | `<p>` | Shown when the cart is empty; Place Order is disabled |
+| `back-to-cart-button` | `<button>` | Back to the cart |
+| `place-order-button` | `<button>` | Place the order |
+
+Seeded promo codes: `WELCOME10` (10% off), `SAVE5` ($5 off), `HALFOFF` (50% off), `ONCEONLY` (20% off, one use), `EXPIRED10` (expired), `DISABLED5` (inactive).
+
+Order detail also shows `order-detail-breakdown`, `order-detail-subtotal`, `order-detail-discount`, `order-detail-shipping` and `order-detail-tax`.
 
 ## LoginPage
 

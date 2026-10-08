@@ -75,9 +75,19 @@ export const SEED_BOOKS: readonly SeedBook[] = [
   { title: 'The Waste Land', author: 'T.S. Eliot', isbn: '978-0-00-100026-3', priceCents: 899, stockQuantity: 3, description: 'A long poem of fragments after the First World War.', categories: ['Poetry', 'Classics'] },
 ]
 
+// Codes for every outcome the checkout form can show
+export const SEED_PROMOS = [
+  { code: 'WELCOME10', type: 'PERCENT', value: 10 },
+  { code: 'SAVE5', type: 'FIXED', value: 500 },
+  { code: 'HALFOFF', type: 'PERCENT', value: 50 },
+  { code: 'EXPIRED10', type: 'PERCENT', value: 10, expiresAt: new Date('2020-01-01T00:00:00Z') },
+  { code: 'ONCEONLY', type: 'PERCENT', value: 20, maxUses: 1 },
+  { code: 'DISABLED5', type: 'FIXED', value: 500, active: false },
+] as const
+
 export async function clearAllData(prisma: PrismaClient): Promise<void> {
   await prisma.$executeRawUnsafe(
-    'TRUNCATE TABLE "order_events", "order_items", "orders", "cart_items", "book_categories", "categories", "Book", "users" RESTART IDENTITY CASCADE'
+    'TRUNCATE TABLE "order_events", "order_items", "orders", "cart_items", "book_categories", "categories", "promo_codes", "Book", "users" RESTART IDENTITY CASCADE'
   )
 }
 
@@ -86,7 +96,7 @@ export async function clearAllData(prisma: PrismaClient): Promise<void> {
 export async function resetAndSeed(
   prisma: PrismaClient,
   accounts: SeedAccounts
-): Promise<{ books: number; users: number; categories: number }> {
+): Promise<{ books: number; users: number; categories: number; promoCodes: number }> {
   await clearAllData(prisma)
 
   await prisma.category.createMany({
@@ -95,6 +105,8 @@ export async function resetAndSeed(
   const categoryIds = new Map(
     (await prisma.category.findMany()).map((category) => [category.name, category.id])
   )
+
+  await prisma.promoCode.createMany({ data: SEED_PROMOS.map((promo) => ({ ...promo })) })
 
   // One at a time so ids and creation times follow the list order
   for (const { categories, ...book } of SEED_BOOKS) {
@@ -124,7 +136,7 @@ export async function resetAndSeed(
   }
   await prisma.user.createMany({ data: users })
 
-  return { books: SEED_BOOKS.length, users: users.length, categories: SEED_CATEGORIES.length }
+  return { books: SEED_BOOKS.length, users: users.length, categories: SEED_CATEGORIES.length, promoCodes: SEED_PROMOS.length }
 }
 
 export function seedAccountsFromEnv(env: NodeJS.ProcessEnv = process.env): SeedAccounts {

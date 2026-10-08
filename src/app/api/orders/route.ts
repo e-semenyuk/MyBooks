@@ -1,8 +1,7 @@
 import { OrderService } from '@/lib/services/orderService'
-import { getCartOwner } from '@/lib/session'
 import { handle, json, parseBody } from '@/lib/api/handler'
 import { ApiError } from '@/lib/api/errors'
-import { getOptionalUser } from '@/lib/api/guards'
+import { getOptionalUser, requireUser } from '@/lib/api/guards'
 import { isOrderStatus } from '@/lib/orderStatus'
 import { createOrderSchema, orderFilterSchema } from '@/lib/validation/schemas'
 
@@ -35,11 +34,12 @@ export const GET = handle(async (request) => {
   return json(await OrderService.getAllOrders())
 })
 
-// POST /api/orders - Create a new order
+// POST /api/orders - Create a new order from the signed-in user's cart
 export const POST = handle(async (request) => {
-  const owner = await getCartOwner()
+  // Checking out needs an account, so the order always belongs to a user
+  const user = await requireUser()
   const body = await parseBody(request, createOrderSchema)
 
-  const order = await OrderService.createOrder(owner, body)
+  const order = await OrderService.createOrder({ kind: 'user', userId: user.id }, body)
   return json(order, 201)
 })

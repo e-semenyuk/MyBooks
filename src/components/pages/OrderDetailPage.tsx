@@ -123,6 +123,28 @@ export default function OrderDetailPage({ orderId, showToast }: OrderDetailPageP
                   </p>
                 </div>
               ))}
+              <dl data-testid="order-detail-breakdown" className="space-y-2 border-b border-mist-200 px-5 py-4 text-sm">
+                <div className="flex justify-between">
+                  <dt className="text-ink-600">Subtotal</dt>
+                  <dd data-testid="order-detail-subtotal" className="num text-ink-950">${order.subtotal.toFixed(2)}</dd>
+                </div>
+                {order.discount > 0 && (
+                  <div className="flex justify-between">
+                    <dt className="text-ink-600">Discount{order.promoCode ? ` (${order.promoCode})` : ''}</dt>
+                    <dd data-testid="order-detail-discount" className="num text-success">-${order.discount.toFixed(2)}</dd>
+                  </div>
+                )}
+                <div className="flex justify-between">
+                  <dt className="text-ink-600">Shipping ({order.shippingMethod === 'EXPRESS' ? 'Express' : 'Standard'})</dt>
+                  <dd data-testid="order-detail-shipping" className="num text-ink-950">
+                    {order.shipping === 0 ? 'Free' : `$${order.shipping.toFixed(2)}`}
+                  </dd>
+                </div>
+                <div className="flex justify-between">
+                  <dt className="text-ink-600">Tax</dt>
+                  <dd data-testid="order-detail-tax" className="num text-ink-950">${order.tax.toFixed(2)}</dd>
+                </div>
+              </dl>
               <div className="flex items-baseline justify-between bg-ink-950 px-5 py-5 text-white">
                 <span className="font-semibold">Total</span>
                 <span data-testid="order-detail-total" className="num font-display text-4xl font-extrabold tracking-tight">

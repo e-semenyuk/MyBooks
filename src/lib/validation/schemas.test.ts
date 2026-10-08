@@ -5,6 +5,7 @@ import {
   categorySchema,
   createBookSchema,
   createOrderSchema,
+  quoteSchema,
   registerSchema,
   updateBookSchema,
   updateCartItemSchema,
@@ -67,8 +68,19 @@ describe('cart schemas', () => {
 describe('createOrderSchema', () => {
   const valid = { customerName: 'Ann', customerEmail: 'ann@example.com', customerAddress: '1 Main St' }
 
-  it('accepts a valid order', () => {
-    expect(createOrderSchema.parse(valid)).toEqual(valid)
+  it('accepts a valid order and defaults to standard shipping', () => {
+    expect(createOrderSchema.parse(valid)).toEqual({ ...valid, shippingMethod: 'STANDARD' })
+  })
+
+  it('accepts express shipping and a trimmed promo code', () => {
+    const parsed = createOrderSchema.parse({ ...valid, shippingMethod: 'EXPRESS', promoCode: ' WELCOME10 ' })
+    expect(parsed.shippingMethod).toBe('EXPRESS')
+    expect(parsed.promoCode).toBe('WELCOME10')
+  })
+
+  it('rejects unknown shipping methods and overlong promo codes', () => {
+    expect(createOrderSchema.safeParse({ ...valid, shippingMethod: 'DRONE' }).success).toBe(false)
+    expect(createOrderSchema.safeParse({ ...valid, promoCode: 'x'.repeat(41) }).success).toBe(false)
   })
 
   it('rejects a bad email and missing fields', () => {
@@ -168,5 +180,11 @@ describe('createBookSchema categories', () => {
     expect(createBookSchema.safeParse({ ...base, categoryIds: [0] }).success).toBe(false)
     expect(createBookSchema.safeParse({ ...base, categoryIds: [1.5] }).success).toBe(false)
     expect(createBookSchema.safeParse({ ...base, categoryIds: Array.from({ length: 11 }, (_, i) => i + 1) }).success).toBe(false)
+  })
+})
+
+describe('quoteSchema', () => {
+  it('defaults to standard shipping with no promo', () => {
+    expect(quoteSchema.parse({})).toEqual({ shippingMethod: 'STANDARD' })
   })
 })

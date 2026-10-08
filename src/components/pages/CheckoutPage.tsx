@@ -1,14 +1,26 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useSession } from 'next-auth/react'
 import { ArrowRightIcon } from '@/components/icons'
+import { SHIPPING_OPTIONS, SHIPPING_METHODS, ShippingMethodName } from '@/lib/pricing'
+import { formatMoney, toCents } from '@/lib/money'
 
 interface CheckoutPageProps {
   showToast: (message: string, type: 'success' | 'error') => void
   updateCartCount: () => void
   navigateTo: (page: 'home' | 'cart' | 'checkout' | 'admin') => void
 }
+
+interface Quote {
+  subtotal: number
+  discount: number
+  shipping: number
+  tax: number
+  total: number
+}
+
+const dollars = (amount: number) => formatMoney(toCents(amount))
 
 export default function CheckoutPage({ showToast, updateCartCount, navigateTo }: CheckoutPageProps) {
   const { data: session } = useSession()
@@ -18,23 +30,84 @@ export default function CheckoutPage({ showToast, updateCartCount, navigateTo }:
     customerAddress: '',
   })
   const [submitting, setSubmitting] = useState(false)
+  const [shippingMethod, setShippingMethod] = useState<ShippingMethodName>('STANDARD')
+  const [promoInput, setPromoInput] = useState('')
+  const [appliedPromo, setAppliedPromo] = useState<string | null>(null)
+  const [promoError, setPromoError] = useState<string | null>(null)
+  const [quote, setQuote] = useState<Quote | null>(null)
+  const [cartEmpty, setCartEmpty] = useState(false)
 
   // Pre-fill form with user data if logged in
   useEffect(() => {
     if (session?.user) {
-      setFormData({
-        customerName: session.user.name || '',
-        customerEmail: session.user.email || '',
-        customerAddress: '',
-      })
+      setFormData((current) => ({
+        ...current,
+        customerName: current.customerName || session.user?.name || '',
+        customerEmail: current.customerEmail || session.user?.email || '',
+      }))
     }
   }, [session])
+
+  // Price the cart whenever the shipping method or the applied code changes
+  const requestQuote = useCallback(
+    async (method: ShippingMethodName, promoCode: string | null) => {
+      const response = await fetch('/api/checkout/quote', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ shippingMethod: method, ...(promoCode ? { promoCode } : {}) }),
+      })
+      const data = await response.json().catch(() => null)
+      return { ok: response.ok, data }
+    },
+    []
+  )
+
+  useEffect(() => {
+    let cancelled = false
+    requestQuote(shippingMethod, appliedPromo)
+      .then(({ ok, data }) => {
+        if (cancelled) return
+        if (ok) {
+          setQuote(data)
+          setCartEmpty(false)
+        } else if (data?.code === 'ORDER_REJECTED' && /empty/i.test(data.error)) {
+          setCartEmpty(true)
+          setQuote(null)
+        } else if (data?.error) {
+          showToast(data.error, 'error')
+        }
+      })
+      .catch(() => !cancelled && showToast('Failed to calculate the total', 'error'))
+    return () => {
+      cancelled = true
+    }
+    // showToast is stable
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [shippingMethod, appliedPromo, requestQuote])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value,
     })
+  }
+
+  const applyPromo = async () => {
+    const code = promoInput.trim()
+    if (!code) return
+    setPromoError(null)
+    const { ok, data } = await requestQuote(shippingMethod, code)
+    if (ok) {
+      setAppliedPromo(data.promoCode)
+      setPromoInput('')
+    } else {
+      setPromoError(data?.error || 'This promo code could not be applied')
+    }
+  }
+
+  const removePromo = () => {
+    setAppliedPromo(null)
+    setPromoError(null)
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -45,7 +118,7 @@ export default function CheckoutPage({ showToast, updateCartCount, navigateTo }:
       const response = await fetch('/api/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({ ...formData, shippingMethod, ...(appliedPromo ? { promoCode: appliedPromo } : {}) }),
       })
 
       if (response.ok) {
@@ -66,6 +139,11 @@ export default function CheckoutPage({ showToast, updateCartCount, navigateTo }:
     }
   }
 
+  const optionClass = (selected: boolean) =>
+    `flex cursor-pointer items-start gap-3 border p-4 transition-colors duration-150 ${
+      selected ? 'border-ink-950 bg-mist-50 outline outline-2 -outline-offset-2 outline-ink-950' : 'border-mist-300 hover:border-ink-950'
+    }`
+
   return (
     <div data-testid="checkout-page" className="animate-fade-in">
       <div className="mb-12">
@@ -74,57 +152,143 @@ export default function CheckoutPage({ showToast, updateCartCount, navigateTo }:
         <p className="text-lg text-ink-600">Enter the delivery details for your order.</p>
       </div>
 
-      <div className="max-w-2xl border-t-2 border-ink-950 pt-8">
-        <form data-testid="checkout-form" onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <label htmlFor="customerName" className="label">
-              Full Name
-            </label>
-            <input
-              data-testid="checkout-name-input"
-              type="text"
-              id="customerName"
-              name="customerName"
-              autoComplete="name"
-              value={formData.customerName}
-              onChange={handleChange}
-              required
-              className="input"
-            />
+      <form data-testid="checkout-form" onSubmit={handleSubmit} className="grid items-start gap-12 lg:grid-cols-3">
+        <div className="space-y-8 border-t-2 border-ink-950 pt-8 lg:col-span-2">
+          <div className="space-y-6">
+            <div>
+              <label htmlFor="customerName" className="label">
+                Full Name
+              </label>
+              <input
+                data-testid="checkout-name-input"
+                type="text"
+                id="customerName"
+                name="customerName"
+                autoComplete="name"
+                value={formData.customerName}
+                onChange={handleChange}
+                required
+                className="input"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="customerEmail" className="label">
+                Email
+              </label>
+              <input
+                data-testid="checkout-email-input"
+                type="email"
+                id="customerEmail"
+                name="customerEmail"
+                autoComplete="email"
+                value={formData.customerEmail}
+                onChange={handleChange}
+                required
+                className="input"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="customerAddress" className="label">
+                Address
+              </label>
+              <textarea
+                data-testid="checkout-address-input"
+                id="customerAddress"
+                name="customerAddress"
+                autoComplete="street-address"
+                value={formData.customerAddress}
+                onChange={handleChange}
+                required
+                rows={3}
+                className="input"
+              />
+            </div>
           </div>
 
-          <div>
-            <label htmlFor="customerEmail" className="label">
-              Email
-            </label>
-            <input
-              data-testid="checkout-email-input"
-              type="email"
-              id="customerEmail"
-              name="customerEmail"
-              autoComplete="email"
-              value={formData.customerEmail}
-              onChange={handleChange}
-              required
-              className="input"
-            />
-          </div>
+          <fieldset data-testid="shipping-options">
+            <legend className="label">Shipping</legend>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {SHIPPING_METHODS.map((method) => {
+                const option = SHIPPING_OPTIONS[method]
+                const selected = shippingMethod === method
+                return (
+                  <label key={method} className={optionClass(selected)}>
+                    <input
+                      data-testid={`shipping-${method.toLowerCase()}`}
+                      type="radio"
+                      name="shippingMethod"
+                      value={method}
+                      checked={selected}
+                      onChange={() => setShippingMethod(method)}
+                      className="mt-1 h-4 w-4 accent-cobalt-500"
+                    />
+                    <span>
+                      <span className="block font-semibold text-ink-950">
+                        {option.label} <span className="num font-mono text-sm font-normal">{dollars(option.cents / 100)}</span>
+                      </span>
+                      <span className="block text-sm text-ink-600">{option.estimate}</span>
+                      {option.freeOverCents !== undefined && (
+                        <span className="block font-mono text-[11px] text-ink-500">
+                          Free over {dollars(option.freeOverCents / 100)}
+                        </span>
+                      )}
+                    </span>
+                  </label>
+                )
+              })}
+            </div>
+          </fieldset>
 
           <div>
-            <label htmlFor="customerAddress" className="label">
-              Address
+            <label htmlFor="promoCode" className="label">
+              Promo code
             </label>
-            <textarea
-              data-testid="checkout-address-input"
-              id="customerAddress"
-              name="customerAddress"
-              autoComplete="street-address"
-              value={formData.customerAddress}
-              onChange={handleChange}
-              required
-              rows={3}
-              className="input"
-            />
+            {appliedPromo ? (
+              <div data-testid="promo-applied" className="flex items-center justify-between border border-success bg-success-soft px-4 py-3">
+                <p className="text-sm text-success">
+                  <span className="font-mono font-semibold">{appliedPromo}</span> applied
+                </p>
+                <button
+                  data-testid="promo-remove-button"
+                  type="button"
+                  onClick={removePromo}
+                  className="text-sm font-semibold text-ink-950 underline underline-offset-4"
+                >
+                  Remove
+                </button>
+              </div>
+            ) : (
+              <div className="flex gap-2">
+                <input
+                  id="promoCode"
+                  data-testid="promo-input"
+                  type="text"
+                  value={promoInput}
+                  onChange={(e) => {
+                    setPromoInput(e.target.value)
+                    setPromoError(null)
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault()
+                      applyPromo()
+                    }
+                  }}
+                  maxLength={40}
+                  className="input uppercase"
+                />
+                <button data-testid="promo-apply-button" type="button" onClick={applyPromo} className="btn btn-secondary">
+                  Apply
+                </button>
+              </div>
+            )}
+            {promoError && (
+              <p data-testid="promo-error" role="alert" className="mt-2 text-sm font-medium text-danger">
+                {promoError}
+              </p>
+            )}
           </div>
 
           <div className="flex flex-col-reverse gap-3 pt-4 sm:flex-row">
@@ -139,15 +303,63 @@ export default function CheckoutPage({ showToast, updateCartCount, navigateTo }:
             <button
               data-testid="place-order-button"
               type="submit"
-              disabled={submitting}
+              disabled={submitting || cartEmpty}
               className="btn btn-primary flex-1 justify-between"
             >
               {submitting ? 'Placing Order...' : 'Place Order'}
               {!submitting && <ArrowRightIcon className="h-5 w-5" />}
             </button>
           </div>
-        </form>
-      </div>
+        </div>
+
+        <aside data-testid="checkout-summary" className="border-2 border-ink-950 lg:sticky lg:top-24">
+          <div className="bg-ink-950 px-6 py-4">
+            <h3 className="font-display text-xl font-bold tracking-tight text-white">Order Summary</h3>
+          </div>
+          <div className="p-6">
+            {cartEmpty ? (
+              <p data-testid="checkout-empty" className="text-sm text-ink-600">
+                Your cart is empty. Add some books before checking out.
+              </p>
+            ) : quote ? (
+              <dl className="space-y-3 text-sm">
+                <div className="flex justify-between">
+                  <dt className="text-ink-600">Subtotal</dt>
+                  <dd data-testid="summary-subtotal" className="num font-semibold text-ink-950">{dollars(quote.subtotal)}</dd>
+                </div>
+                {quote.discount > 0 && (
+                  <div className="flex justify-between">
+                    <dt className="text-ink-600">Discount</dt>
+                    <dd data-testid="summary-discount" className="num font-semibold text-success">-{dollars(quote.discount)}</dd>
+                  </div>
+                )}
+                <div className="flex justify-between">
+                  <dt className="text-ink-600">Shipping</dt>
+                  <dd data-testid="summary-shipping" className="num font-semibold text-ink-950">
+                    {quote.shipping === 0 ? 'Free' : dollars(quote.shipping)}
+                  </dd>
+                </div>
+                <div className="flex justify-between">
+                  <dt className="text-ink-600">Tax</dt>
+                  <dd data-testid="summary-tax" className="num font-semibold text-ink-950">{dollars(quote.tax)}</dd>
+                </div>
+                <div className="flex items-baseline justify-between border-t-2 border-ink-950 pt-5">
+                  <dt className="font-semibold text-ink-950">Total</dt>
+                  <dd data-testid="summary-total" className="num font-display text-4xl font-extrabold tracking-tight text-ink-950">
+                    {dollars(quote.total)}
+                  </dd>
+                </div>
+              </dl>
+            ) : (
+              <div aria-busy="true" className="space-y-3">
+                <div className="skeleton h-5 w-full" />
+                <div className="skeleton h-5 w-full" />
+                <div className="skeleton h-10 w-full" />
+              </div>
+            )}
+          </div>
+        </aside>
+      </form>
     </div>
   )
 }

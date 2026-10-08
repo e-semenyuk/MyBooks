@@ -14,6 +14,16 @@ enum UserRole {
   ADMIN
 }
 
+enum ShippingMethod {
+  STANDARD
+  EXPRESS
+}
+
+enum PromoType {
+  PERCENT
+  FIXED
+}
+
 enum OrderStatus {
   PENDING
   CONFIRMED
@@ -86,7 +96,13 @@ model Order {
   customerEmail   String
   customerAddress String      @db.Text
   orderDate       DateTime    @default(now())
+  subtotalCents   Int            @default(0)
+  discountCents   Int            @default(0)
+  shippingCents   Int            @default(0)
+  taxCents        Int            @default(0)
   totalCents      Int
+  shippingMethod  ShippingMethod @default(STANDARD)
+  promoCode       String?
   status          OrderStatus @default(CONFIRMED)
   orderItems      OrderItem[]
   events          OrderEvent[]
@@ -147,4 +163,19 @@ model BookCategory {
   @@id([bookId, categoryId])
   @@index([categoryId])
   @@map("book_categories")
+}
+
+// PERCENT: value is a whole percent (1 to 100). FIXED: value is cents.
+model PromoCode {
+  id        Int       @id @default(autoincrement())
+  code      String    @unique
+  type      PromoType
+  value     Int
+  expiresAt DateTime?
+  maxUses   Int?
+  usedCount Int       @default(0)
+  active    Boolean   @default(true)
+  createdAt DateTime  @default(now())
+
+  @@map("promo_codes")
 }

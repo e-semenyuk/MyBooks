@@ -13,7 +13,7 @@ describe('OpenAPI document', () => {
     const paths = Object.keys(buildOpenApi().paths)
     for (const path of [
       '/api/health', '/api/books', '/api/books/{id}', '/api/cart', '/api/cart/{id}', '/api/cart/total',
-      '/api/cart/merge', '/api/categories', '/api/categories/{id}', '/api/orders', '/api/orders/{id}', '/api/register', '/api/test/reset', '/api/test/seed',
+      '/api/cart/merge', '/api/categories', '/api/categories/{id}', '/api/checkout/quote', '/api/shipping-methods', '/api/orders', '/api/orders/{id}', '/api/register', '/api/test/reset', '/api/test/seed',
     ]) {
       expect(paths).toContain(path)
     }

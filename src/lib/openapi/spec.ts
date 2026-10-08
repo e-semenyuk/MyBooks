@@ -6,6 +6,7 @@ import {
   categorySchema,
   createBookSchema,
   createOrderSchema,
+  quoteSchema,
   registerSchema,
   updateBookSchema,
   updateCartItemSchema,
@@ -243,9 +244,15 @@ function buildDocument(): Json {
         },
         post: {
           tags: ['Orders'],
-          summary: 'Turn the current cart into an order (status CONFIRMED) and reduce stock',
+          summary: 'Turn the signed-in user cart into an order (status CONFIRMED), reduce stock and count the promo code',
+          description: 'Signing in is required. Prices are recomputed on the server; the client never sends amounts.',
+          security: [{ sessionCookie: [] }],
           requestBody: { required: true, content: jsonContent(body(createOrderSchema, ['customerEmail'])) },
-          responses: { '201': { description: 'Created', content: jsonContent(ref('Order')) }, '400': errorResponse('VALIDATION_ERROR or ORDER_REJECTED (empty cart, missing book, not enough stock)') },
+          responses: {
+            '201': { description: 'Created', content: jsonContent(ref('Order')) },
+            '400': errorResponse('VALIDATION_ERROR, ORDER_REJECTED (empty cart, missing book, not enough stock), INVALID_PROMO, PROMO_EXPIRED or PROMO_EXHAUSTED'),
+            '401': authErrors['401'],
+          },
         },
       },
       '/api/orders/{id}': {
@@ -267,6 +274,45 @@ function buildDocument(): Json {
             ...authErrors,
             '404': errorResponse('ORDER_NOT_FOUND'),
             '409': errorResponse('INVALID_TRANSITION'),
+          },
+        },
+      },
+      '/api/checkout/quote': {
+        post: {
+          tags: ['Orders'],
+          summary: 'Price the signed-in user cart with a shipping method and optional promo code',
+          description:
+            'Standard shipping is free from 50.00 after discount; Express is never free. Tax is charged on the discounted subtotal.',
+          security: [{ sessionCookie: [] }],
+          requestBody: { required: true, content: jsonContent(body(quoteSchema)) },
+          responses: {
+            '200': { description: 'Breakdown in dollars', content: jsonContent(ref('Quote')) },
+            '400': errorResponse('VALIDATION_ERROR, ORDER_REJECTED (empty cart), INVALID_PROMO, PROMO_EXPIRED or PROMO_EXHAUSTED'),
+            '401': authErrors['401'],
+          },
+        },
+      },
+      '/api/shipping-methods': {
+        get: {
+          tags: ['Orders'],
+          summary: 'Shipping options with price and delivery estimate',
+          responses: {
+            '200': {
+              description: 'Options',
+              content: jsonContent({
+                type: 'array',
+                items: {
+                  type: 'object',
+                  properties: {
+                    method: { type: 'string', enum: ['STANDARD', 'EXPRESS'] },
+                    label: { type: 'string' },
+                    price: { type: 'number' },
+                    freeOver: { type: ['number', 'null'] },
+                    estimate: { type: 'string' },
+                  },
+                },
+              }),
+            },
           },
         },
       },
@@ -293,7 +339,7 @@ function buildDocument(): Json {
       '/api/test/seed': {
         post: {
           tags: ['Test support'],
-          summary: 'Remove all data and load the fixed data set (38 books in 8 categories, admin from ADMIN_EMAIL/ADMIN_PASSWORD, optional USER_EMAIL/USER_PASSWORD)',
+          summary: 'Remove all data and load the fixed data set (38 books in 8 categories, 6 promo codes, admin from ADMIN_EMAIL/ADMIN_PASSWORD, optional USER_EMAIL/USER_PASSWORD)',
           parameters: [{ name: 'x-test-secret', in: 'header', required: true, schema: { type: 'string' } }],
           responses: { '200': { description: 'Counts', content: jsonContent({ type: 'object', properties: { books: { type: 'integer' }, users: { type: 'integer' } } }) }, '400': errorResponse('SEED_CONFIG'), '404': errorResponse('Disabled or wrong secret') },
         },
@@ -311,6 +357,16 @@ function buildDocument(): Json {
             error: { type: 'string', description: 'Message safe to show to a person' },
             code: { type: 'string', description: 'Stable machine-readable code' },
             details: { type: 'array', items: { type: 'object', properties: { path: { type: 'string' }, message: { type: 'string' } } } },
+          },
+        },
+        Quote: {
+          type: 'object',
+          required: ['shippingMethod', 'subtotal', 'discount', 'shipping', 'tax', 'total'],
+          properties: {
+            shippingMethod: { type: 'string', enum: ['STANDARD', 'EXPRESS'] },
+            promoCode: { type: ['string', 'null'] },
+            subtotal: { type: 'number' }, discount: { type: 'number' }, shipping: { type: 'number' },
+            tax: { type: 'number' }, total: { type: 'number', description: 'subtotal - discount + shipping + tax' },
           },
         },
         OrderStatus: { type: 'string', enum: [...ORDER_STATUSES] },
@@ -380,7 +436,11 @@ function buildDocument(): Json {
           properties: {
             id: { type: 'integer' }, userId: { type: ['integer', 'null'] },
             customerName: { type: 'string' }, customerEmail: { type: 'string' }, customerAddress: { type: 'string' },
-            orderDate: { type: 'string', format: 'date-time' }, totalAmount: { type: 'number', description: 'Dollars, two decimals' },
+            orderDate: { type: 'string', format: 'date-time' },
+            subtotal: { type: 'number' }, discount: { type: 'number' }, shipping: { type: 'number' }, tax: { type: 'number' },
+            totalAmount: { type: 'number', description: 'Dollars, two decimals: subtotal - discount + shipping + tax' },
+            shippingMethod: { type: 'string', enum: ['STANDARD', 'EXPRESS'] },
+            promoCode: { type: ['string', 'null'] },
             status: ref('OrderStatus'),
             orderItems: { type: 'array', items: ref('OrderItem') },
             events: { type: 'array', items: ref('OrderEvent'), description: 'Only on GET /api/orders/{id} and after a status change' },
@@ -411,6 +471,8 @@ const OPERATION_IDS: Record<string, string> = {
   'post /api/cart/merge': 'mergeCart',
   'get /api/orders': 'listOrders',
   'post /api/orders': 'createOrder',
+  'post /api/checkout/quote': 'quoteCheckout',
+  'get /api/shipping-methods': 'listShippingMethods',
   'get /api/orders/{id}': 'getOrder',
   'patch /api/orders/{id}': 'updateOrderStatus',
   'post /api/register': 'register',

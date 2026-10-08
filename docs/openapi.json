@@ -1239,7 +1239,13 @@
         "tags": [
           "Orders"
         ],
-        "summary": "Turn the current cart into an order (status CONFIRMED) and reduce stock",
+        "summary": "Turn the signed-in user cart into an order (status CONFIRMED), reduce stock and count the promo code",
+        "description": "Signing in is required. Prices are recomputed on the server; the client never sends amounts.",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -1247,6 +1253,18 @@
               "schema": {
                 "type": "object",
                 "properties": {
+                  "shippingMethod": {
+                    "default": "STANDARD",
+                    "type": "string",
+                    "enum": [
+                      "STANDARD",
+                      "EXPRESS"
+                    ]
+                  },
+                  "promoCode": {
+                    "type": "string",
+                    "maxLength": 40
+                  },
                   "customerName": {
                     "type": "string",
                     "minLength": 1,
@@ -1284,7 +1302,17 @@
             }
           },
           "400": {
-            "description": "VALIDATION_ERROR or ORDER_REJECTED (empty cart, missing book, not enough stock)",
+            "description": "VALIDATION_ERROR, ORDER_REJECTED (empty cart, missing book, not enough stock), INVALID_PROMO, PROMO_EXPIRED or PROMO_EXHAUSTED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in (code UNAUTHORIZED)",
             "content": {
               "application/json": {
                 "schema": {
@@ -1294,8 +1322,7 @@
             }
           }
         },
-        "operationId": "createOrder",
-        "security": []
+        "operationId": "createOrder"
       }
     },
     "/api/orders/{id}": {
@@ -1459,6 +1486,126 @@
         "operationId": "updateOrderStatus"
       }
     },
+    "/api/checkout/quote": {
+      "post": {
+        "tags": [
+          "Orders"
+        ],
+        "summary": "Price the signed-in user cart with a shipping method and optional promo code",
+        "description": "Standard shipping is free from 50.00 after discount; Express is never free. Tax is charged on the discounted subtotal.",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "shippingMethod": {
+                    "default": "STANDARD",
+                    "type": "string",
+                    "enum": [
+                      "STANDARD",
+                      "EXPRESS"
+                    ]
+                  },
+                  "promoCode": {
+                    "type": "string",
+                    "maxLength": 40
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Breakdown in dollars",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Quote"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_ERROR, ORDER_REJECTED (empty cart), INVALID_PROMO, PROMO_EXPIRED or PROMO_EXHAUSTED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in (code UNAUTHORIZED)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "quoteCheckout"
+      }
+    },
+    "/api/shipping-methods": {
+      "get": {
+        "tags": [
+          "Orders"
+        ],
+        "summary": "Shipping options with price and delivery estimate",
+        "responses": {
+          "200": {
+            "description": "Options",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "method": {
+                        "type": "string",
+                        "enum": [
+                          "STANDARD",
+                          "EXPRESS"
+                        ]
+                      },
+                      "label": {
+                        "type": "string"
+                      },
+                      "price": {
+                        "type": "number"
+                      },
+                      "freeOver": {
+                        "type": [
+                          "number",
+                          "null"
+                        ]
+                      },
+                      "estimate": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "operationId": "listShippingMethods",
+        "security": []
+      }
+    },
     "/api/register": {
       "post": {
         "tags": [
@@ -1601,7 +1748,7 @@
         "tags": [
           "Test support"
         ],
-        "summary": "Remove all data and load the fixed data set (38 books in 8 categories, admin from ADMIN_EMAIL/ADMIN_PASSWORD, optional USER_EMAIL/USER_PASSWORD)",
+        "summary": "Remove all data and load the fixed data set (38 books in 8 categories, 6 promo codes, admin from ADMIN_EMAIL/ADMIN_PASSWORD, optional USER_EMAIL/USER_PASSWORD)",
         "parameters": [
           {
             "name": "x-test-secret",
@@ -1694,6 +1841,48 @@
                 }
               }
             }
+          }
+        }
+      },
+      "Quote": {
+        "type": "object",
+        "required": [
+          "shippingMethod",
+          "subtotal",
+          "discount",
+          "shipping",
+          "tax",
+          "total"
+        ],
+        "properties": {
+          "shippingMethod": {
+            "type": "string",
+            "enum": [
+              "STANDARD",
+              "EXPRESS"
+            ]
+          },
+          "promoCode": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "subtotal": {
+            "type": "number"
+          },
+          "discount": {
+            "type": "number"
+          },
+          "shipping": {
+            "type": "number"
+          },
+          "tax": {
+            "type": "number"
+          },
+          "total": {
+            "type": "number",
+            "description": "subtotal - discount + shipping + tax"
           }
         }
       },
@@ -1978,9 +2167,34 @@
             "type": "string",
             "format": "date-time"
           },
+          "subtotal": {
+            "type": "number"
+          },
+          "discount": {
+            "type": "number"
+          },
+          "shipping": {
+            "type": "number"
+          },
+          "tax": {
+            "type": "number"
+          },
           "totalAmount": {
             "type": "number",
-            "description": "Dollars, two decimals"
+            "description": "Dollars, two decimals: subtotal - discount + shipping + tax"
+          },
+          "shippingMethod": {
+            "type": "string",
+            "enum": [
+              "STANDARD",
+              "EXPRESS"
+            ]
+          },
+          "promoCode": {
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "status": {
             "$ref": "#/components/schemas/OrderStatus"

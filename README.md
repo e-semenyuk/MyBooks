@@ -6,7 +6,7 @@ Digital bookstore built with Next.js 14 (App Router), TypeScript, Prisma and Pos
 
 - Browse the catalog with categories, filters (category, author, price), sorting and pages; the state is in the URL. Search by title, author or ISBN. Every book has a detail page
 - Guest cart that follows you into your account at sign-in; stock is checked when you add items
-- Checkout creates an order (status flow PENDING → CONFIRMED → SHIPPED → DELIVERED, or CANCELLED) and reduces stock
+- Checkout needs an account. It offers Standard or Express shipping and promo codes, shows the full breakdown (subtotal, discount, shipping, tax) and creates an order (status flow PENDING → CONFIRMED → SHIPPED → DELIVERED, or CANCELLED) and reduces stock
 - Accounts with roles USER and ADMIN; order history and order detail with status history
 - Admin page for books and orders
 - Every page has its own URL; private pages redirect guests to the login page
@@ -39,6 +39,7 @@ npm run dev                       # http://localhost:3000
 | `ADMIN_EMAIL`, `ADMIN_PASSWORD` | Admin account created by the seed. No default password exists |
 | `USER_EMAIL`, `USER_PASSWORD` | Optional regular user created by the seed (set both or neither) |
 | `ENABLE_TEST_ENDPOINTS`, `TEST_SECRET` | Turn on `/api/test/*` for test environments (secret of at least 16 characters) |
+| `TAX_RATE` | Tax rate on the discounted subtotal, default `0.08` |
 | `RATE_LIMIT_DISABLED` | `true` in test environments so repeated sign-ins are not throttled |
 | `SMTP_HOST`, `SMTP_PORT` | Mail server (used by later features) |
 

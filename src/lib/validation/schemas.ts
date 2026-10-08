@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { SHIPPING_METHODS } from '@/lib/pricing'
 
 const money = z
   .number({ error: 'Price must be a number' })
@@ -48,7 +49,17 @@ export const addToCartSchema = z.object({
 
 export const updateCartItemSchema = z.object({ quantity })
 
+const shippingMethod = z.enum(SHIPPING_METHODS, { error: 'Shipping method must be STANDARD or EXPRESS' })
+const promoCode = z.string().trim().max(40, 'Promo code is too long').optional()
+
+export const quoteSchema = z.object({
+  shippingMethod: shippingMethod.default('STANDARD'),
+  promoCode,
+})
+
 export const createOrderSchema = z.object({
+  shippingMethod: shippingMethod.default('STANDARD'),
+  promoCode,
   customerName: text('Customer name', 100),
   customerEmail: z
     .string({ error: 'Customer email is required' })

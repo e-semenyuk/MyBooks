@@ -40,9 +40,13 @@ type EventRows = { events?: OrderEvent[] }
 export function mapOrder(row: OrderRow & EventRows & { orderItems: (ItemRow & { book: BookRow })[] }): OrderWithItems
 export function mapOrder(row: OrderRow & EventRows & { orderItems?: ItemRow[] }): Order
 export function mapOrder(row: OrderRow & EventRows & { orderItems?: ItemRow[] }): Order {
-  const { totalCents, orderItems, ...rest } = row
+  const { totalCents, subtotalCents, discountCents, shippingCents, taxCents, orderItems, ...rest } = row
   return {
     ...rest,
+    subtotal: fromCents(subtotalCents),
+    discount: fromCents(discountCents),
+    shipping: fromCents(shippingCents),
+    tax: fromCents(taxCents),
     totalAmount: fromCents(totalCents),
     ...(orderItems ? { orderItems: orderItems.map((item) => mapOrderItem(item)) } : {}),
   }

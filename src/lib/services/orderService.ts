@@ -9,7 +9,17 @@ import {
   isOrderStatus,
 } from '@/lib/orderStatus'
 import { Order, OrderWithItems, CreateOrderRequest } from '@/types'
+import type { PromoCode } from '@prisma/client'
 import { CartOwner } from '@/lib/cartOwner'
+import { ApiError } from '@/lib/api/errors'
+import {
+  PROMO_MESSAGES,
+  ShippingMethodName,
+  computeTotals,
+  normalizePromoCode,
+  promoProblem,
+  taxRateFromEnv,
+} from '@/lib/pricing'
 import { CartService } from './cartService'
 import { BookService } from './bookService'
 
@@ -32,35 +42,48 @@ export class OrderRejectedError extends Error {
 }
 
 export class OrderService {
+  // What the cart would cost with this shipping method and promo code. Throws
+  // OrderRejectedError for an empty cart and ApiError for a bad promo code.
+  static async quote(owner: CartOwner, input: { shippingMethod: ShippingMethodName; promoCode?: string }) {
+    const cartItems = await CartService.getCartItems(owner)
+    if (cartItems.length === 0) throw new OrderRejectedError('Cart is empty')
+
+    const books = await BookService.getRowsByIds(cartItems.map((item) => item.bookId))
+
+    const lines = cartItems.map((cartItem) => {
+      const book = books.get(cartItem.bookId)
+      if (!book) throw new OrderRejectedError(`Book not found with ID: ${cartItem.bookId}`)
+      if (book.stockQuantity < cartItem.quantity) {
+        throw new OrderRejectedError(`Insufficient stock for book: ${book.title}`)
+      }
+      return { cartItem, book, priceCents: book.priceCents, quantity: cartItem.quantity }
+    })
+
+    let promo: PromoCode | null = null
+    const code = input.promoCode ? normalizePromoCode(input.promoCode) : ''
+    if (code) {
+      promo = await prisma.promoCode.findUnique({ where: { code } })
+      const problem = promoProblem(promo, new Date())
+      if (problem) throw ApiError.badRequest(PROMO_MESSAGES[problem], problem)
+    }
+
+    const totals = computeTotals({
+      items: lines,
+      promo: promo ? { type: promo.type, value: promo.value } : null,
+      shippingMethod: input.shippingMethod,
+      taxRate: taxRateFromEnv(),
+    })
+
+    return { lines, promo, totals }
+  }
+
   static async createOrder(
     owner: CartOwner,
     data: CreateOrderRequest
   ): Promise<Order> {
     const userId = owner.kind === 'user' ? owner.userId : null
-    const cartItems = await CartService.getCartItems(owner)
-
-    if (cartItems.length === 0) {
-      throw new OrderRejectedError('Cart is empty')
-    }
-
-    // One query for every book in the cart
-    const books = await BookService.getRowsByIds(cartItems.map((item) => item.bookId))
-
-    // Validate stock for all items first and add up the total in cents
-    let totalCents = 0
-    for (const cartItem of cartItems) {
-      const book = books.get(cartItem.bookId)
-
-      if (!book) {
-        throw new OrderRejectedError(`Book not found with ID: ${cartItem.bookId}`)
-      }
-
-      if (book.stockQuantity < cartItem.quantity) {
-        throw new OrderRejectedError(`Insufficient stock for book: ${book.title}`)
-      }
-
-      totalCents += book.priceCents * cartItem.quantity
-    }
+    const shippingMethod = data.shippingMethod ?? 'STANDARD'
+    const { lines, promo, totals } = await this.quote(owner, { shippingMethod, promoCode: data.promoCode })
 
     // Create order with items in a transaction
     const order = await prisma.$transaction(async (tx) => {
@@ -70,15 +93,19 @@ export class OrderService {
           customerName: data.customerName,
           customerEmail: data.customerEmail,
           customerAddress: data.customerAddress,
-          totalCents,
+          subtotalCents: totals.subtotalCents,
+          discountCents: totals.discountCents,
+          shippingCents: totals.shippingCents,
+          taxCents: totals.taxCents,
+          totalCents: totals.totalCents,
+          shippingMethod,
+          promoCode: promo?.code ?? null,
           status: 'CONFIRMED',
           events: { create: { fromStatus: null, toStatus: 'CONFIRMED', actorId: userId } },
         },
       })
 
-      for (const cartItem of cartItems) {
-        const book = books.get(cartItem.bookId)!
-
+      for (const { cartItem, book } of lines) {
         await tx.orderItem.create({
           data: {
             orderId: newOrder.id,
@@ -96,6 +123,18 @@ export class OrderService {
 
         if (updated.count === 0) {
           throw new OrderRejectedError(`Insufficient stock for book: ${book.title}`)
+        }
+      }
+
+      // Count the code once per order even when two orders race for the last use
+      if (promo) {
+        const redeemed = await tx.$executeRaw`
+          UPDATE "promo_codes" SET "usedCount" = "usedCount" + 1
+          WHERE "id" = ${promo.id} AND "active" = true
+            AND ("maxUses" IS NULL OR "usedCount" < "maxUses")
+            AND ("expiresAt" IS NULL OR "expiresAt" > NOW())`
+        if (redeemed === 0) {
+          throw ApiError.badRequest(PROMO_MESSAGES.PROMO_EXHAUSTED, 'PROMO_EXHAUSTED')
         }
       }
 
