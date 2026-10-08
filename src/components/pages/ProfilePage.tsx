@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useSession } from 'next-auth/react'
-import { ArrowRightIcon, LockIcon, PackageIcon } from '@/components/icons'
+import { ArrowRightIcon } from '@/components/icons'
 
 interface ProfilePageProps {
   showToast: (message: string, type: 'success' | 'error') => void
@@ -46,9 +46,9 @@ export default function ProfilePage({ showToast }: ProfilePageProps) {
   if (!session) {
     return (
       <div data-testid="profile-login-required" className="empty-state">
-        <LockIcon className="mx-auto mb-4 h-8 w-8 text-stone-500" />
-        <h2 className="panel-title mb-2">Please Login</h2>
-        <p className="text-sm text-stone-600">You need to be logged in to view your profile.</p>
+        <p className="section-label mb-4">Restricted</p>
+        <h2 className="panel-title mb-3">Please Login</h2>
+        <p className="text-ink-600">You need to be logged in to view your profile.</p>
       </div>
     )
   }
@@ -66,66 +66,59 @@ export default function ProfilePage({ showToast }: ProfilePageProps) {
     }
   }
 
-  const initial = session.user?.name?.charAt(0).toUpperCase() ?? '?'
-
   return (
     <div data-testid="profile-page" className="animate-fade-in">
-      <div data-testid="profile-header" className="mb-10 flex items-center gap-6 border-b border-stone-200 pb-8">
-        <div
-          aria-hidden="true"
-          className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-ink-900 font-display text-3xl font-semibold text-white"
-        >
-          {initial}
-        </div>
-        <div className="min-w-0">
-          <p className="section-label mb-2">Account</p>
-          <h2 className="page-title mb-1 truncate">Welcome, {session.user?.name}</h2>
-          <p className="flex flex-wrap items-center gap-3 text-sm text-stone-600">
-            <span className="truncate">{session.user?.email}</span>
-            <span className={`badge ${(session.user as any)?.role === 'ADMIN' ? 'bg-brass-100 text-brass-700' : 'badge-primary'}`}>
-              {(session.user as any)?.role}
-            </span>
-          </p>
-        </div>
+      <div data-testid="profile-header" className="mb-14">
+        <p className="section-label mb-6">05 / Account</p>
+        <h2 className="page-title mb-5 break-words">Welcome, {session.user?.name}</h2>
+        <p className="flex flex-wrap items-center gap-3 text-ink-600">
+          <span>{session.user?.email}</span>
+          <span className={`badge ${(session.user as any)?.role === 'ADMIN' ? 'border-cobalt-500 bg-cobalt-50 text-cobalt-700' : 'badge-primary'}`}>
+            {(session.user as any)?.role}
+          </span>
+        </p>
       </div>
 
       <div data-testid="order-history-section">
-        <div className="mb-6 flex items-baseline justify-between">
-          <h3 className="font-display text-2xl font-semibold tracking-tight text-ink-900">Order History</h3>
-          <span className="num text-sm text-stone-600">
+        <div className="flex items-baseline justify-between border-t-2 border-ink-950 pb-5 pt-5">
+          <h3 className="font-display text-2xl font-bold tracking-tight text-ink-950">Order History</h3>
+          <span className="num font-mono text-xs text-ink-600">
             {orders.length} {orders.length === 1 ? 'Order' : 'Orders'}
           </span>
         </div>
 
         {loading ? (
-          <div data-testid="profile-orders-loading" aria-busy="true" className="space-y-4">
+          <div data-testid="profile-orders-loading" aria-busy="true" className="space-y-px">
             <div className="skeleton h-40 w-full" />
             <div className="skeleton h-40 w-full" />
           </div>
         ) : orders.length === 0 ? (
-          <div data-testid="profile-no-orders" className="empty-state">
-            <PackageIcon className="mx-auto mb-4 h-8 w-8 text-stone-500" />
-            <h3 className="panel-title mb-2">No orders yet</h3>
-            <p className="mb-6 text-sm text-stone-600">Your orders will appear here after your first purchase.</p>
+          <div data-testid="profile-no-orders" className="border-t border-mist-200 py-14">
+            <p className="section-label mb-4">0 orders</p>
+            <h3 className="panel-title mb-3">No orders yet</h3>
+            <p className="mb-8 max-w-md text-ink-600">Your orders will appear here after your first purchase.</p>
             <Link href="/" className="btn btn-primary">
               Browse Books
+              <ArrowRightIcon className="h-5 w-5" />
             </Link>
           </div>
         ) : (
-          <div data-testid="profile-orders-list" className="space-y-4">
+          <div data-testid="profile-orders-list">
             {orders.map((order) => (
               <div
                 key={order.id}
                 data-testid={`profile-order-item-${order.id}`}
-                className="rounded-lg border border-stone-200 bg-white"
+                className="border-t border-mist-200 py-7"
               >
-                <div className="flex flex-wrap items-start justify-between gap-4 border-b border-stone-200 p-5">
+                <div className="mb-5 flex flex-wrap items-start justify-between gap-4">
                   <div>
                     <div className="mb-1 flex items-center gap-3">
-                      <h4 className="font-display text-lg font-semibold text-ink-900">Order #{order.id}</h4>
+                      <h4 className="font-display text-2xl font-bold tracking-tight text-ink-950">
+                        Order #{order.id}
+                      </h4>
                       <span className={`badge ${getStatusColor(order.status)}`}>{order.status}</span>
                     </div>
-                    <p className="text-sm text-stone-600">
+                    <p className="font-mono text-xs text-ink-500">
                       {new Date(order.orderDate).toLocaleDateString('en-US', {
                         year: 'numeric',
                         month: 'long',
@@ -135,42 +128,38 @@ export default function ProfilePage({ showToast }: ProfilePageProps) {
                   </div>
                   <div className="text-right">
                     <p className="section-label mb-1">Total</p>
-                    <p className="num font-display text-2xl font-semibold text-ink-900">
+                    <p className="num font-display text-3xl font-extrabold tracking-tight text-ink-950">
                       ${order.totalAmount.toFixed(2)}
                     </p>
                   </div>
                 </div>
 
-                <div className="p-5">
-                  <p className="section-label mb-3">Items ({order.orderItems?.length || 0})</p>
-                  <div className="space-y-3">
-                    {order.orderItems?.map((item: any, idx: number) => (
-                      <div key={idx} className="flex items-start justify-between gap-4">
-                        <div className="min-w-0">
-                          <p className="font-medium text-ink-900">{item.book?.title || 'Unknown'}</p>
-                          <p className="text-sm text-stone-600">{item.book?.author || 'Unknown'}</p>
-                          <p className="num text-xs text-stone-500">
-                            ${item.price.toFixed(2)} x {item.quantity}
-                          </p>
-                        </div>
-                        <p className="num shrink-0 font-medium text-ink-900">
-                          ${(Math.round(item.price * 100) * item.quantity / 100).toFixed(2)}
+                <p className="section-label mb-3">Items ({order.orderItems?.length || 0})</p>
+                <div className="mb-5 divide-y divide-mist-200 border-y border-mist-200">
+                  {order.orderItems?.map((item: any, idx: number) => (
+                    <div key={idx} className="flex items-start justify-between gap-4 py-3">
+                      <div className="min-w-0">
+                        <p className="font-semibold text-ink-950">{item.book?.title || 'Unknown'}</p>
+                        <p className="text-sm text-ink-600">{item.book?.author || 'Unknown'}</p>
+                        <p className="num font-mono text-xs text-ink-500">
+                          ${item.price.toFixed(2)} x {item.quantity}
                         </p>
                       </div>
-                    ))}
-                  </div>
-
-                  <div className="mt-5 border-t border-stone-200 pt-4">
-                    <Link
-                      data-testid={`profile-order-view-${order.id}`}
-                      href={`/orders/${order.id}`}
-                      className="inline-flex items-center gap-1.5 text-sm font-medium text-brass-700 transition-colors hover:text-ink-900"
-                    >
-                      View details
-                      <ArrowRightIcon className="h-4 w-4" />
-                    </Link>
-                  </div>
+                      <p className="num shrink-0 font-semibold text-ink-950">
+                        ${(Math.round(item.price * 100) * item.quantity / 100).toFixed(2)}
+                      </p>
+                    </div>
+                  ))}
                 </div>
+
+                <Link
+                  data-testid={`profile-order-view-${order.id}`}
+                  href={`/orders/${order.id}`}
+                  className="inline-flex items-center gap-2 text-sm font-semibold text-cobalt-500 underline underline-offset-4 transition-colors hover:text-cobalt-700"
+                >
+                  View details
+                  <ArrowRightIcon className="h-4 w-4" />
+                </Link>
               </div>
             ))}
           </div>

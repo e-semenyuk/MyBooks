@@ -55,7 +55,7 @@ npm run dev                       # http://localhost:3000
 
 ## Design
 
-Ink and brass: near-black ink for structure, warm greys for surfaces, one muted brass accent. Source Serif 4 for titles and prices, Inter for interface text. Colors, shared component classes (`btn`, `input`, `card`, `badge`, `data-table`) and the toast style are defined in `tailwind.config.ts` and `src/app/globals.css`; icons are in `src/components/icons.tsx`. Book covers are drawn by `BookCover` until real cover images exist.
+Swiss cobalt: white page, true black structure (2px rules, black footer), one cobalt accent, square corners, no shadows or gradients. Bricolage Grotesque for headlines and prices, Hanken Grotesk for text, JetBrains Mono for small labels and metadata. Colors, shared component classes (`btn`, `input`, `label`, `badge`, `data-table`) and the toast style are defined in `tailwind.config.ts` and `src/app/globals.css`; icons are in `src/components/icons.tsx`. Book covers are generated flat geometric compositions (`BookCover`) until real cover images exist.
 
 ## API
 

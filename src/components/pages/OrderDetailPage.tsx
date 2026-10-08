@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { ArrowLeftIcon, SearchOffIcon } from '@/components/icons'
+import { ArrowLeftIcon } from '@/components/icons'
 import { OrderWithItems } from '@/types'
 
 interface OrderDetailPageProps {
@@ -41,7 +41,7 @@ export default function OrderDetailPage({ orderId, showToast }: OrderDetailPageP
   if (loading) {
     return (
       <div data-testid="order-detail-loading" aria-busy="true" className="space-y-4">
-        <div className="skeleton h-10 w-64" />
+        <div className="skeleton h-14 w-72" />
         <div className="skeleton h-64 w-full" />
       </div>
     )
@@ -50,9 +50,9 @@ export default function OrderDetailPage({ orderId, showToast }: OrderDetailPageP
   if (notFound || !order) {
     return (
       <div data-testid="order-detail-not-found" className="empty-state">
-        <SearchOffIcon className="mx-auto mb-4 h-8 w-8 text-stone-500" />
-        <h2 className="panel-title mb-2">Order not found</h2>
-        <p className="mb-6 text-sm text-stone-600">
+        <p className="section-label mb-4">Error 404</p>
+        <h2 className="panel-title mb-3">Order not found</h2>
+        <p className="mb-8 max-w-md text-ink-600">
           This order does not exist or belongs to another account.
         </p>
         <Link data-testid="order-detail-back-button" href="/profile" className="btn btn-primary">
@@ -73,15 +73,15 @@ export default function OrderDetailPage({ orderId, showToast }: OrderDetailPageP
       <Link
         data-testid="order-detail-back-button"
         href="/profile"
-        className="mb-8 inline-flex items-center gap-2 text-sm font-medium text-brass-700 transition-colors hover:text-ink-900"
+        className="mb-10 inline-flex items-center gap-2 text-sm font-semibold text-cobalt-500 underline underline-offset-4 transition-colors hover:text-cobalt-700"
       >
         <ArrowLeftIcon className="h-4 w-4" />
         Back to profile
       </Link>
 
-      <div className="mb-10 flex flex-wrap items-end justify-between gap-4 border-b border-stone-200 pb-8">
+      <div className="mb-12 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="section-label mb-3">
+          <p className="section-label mb-6">
             Placed{' '}
             {new Date(order.orderDate).toLocaleDateString('en-US', {
               year: 'numeric',
@@ -93,42 +93,39 @@ export default function OrderDetailPage({ orderId, showToast }: OrderDetailPageP
             Order #{order.id}
           </h2>
         </div>
-        <span data-testid="order-detail-status" className={`badge ${badge} px-3 py-1 text-sm`}>
+        <span data-testid="order-detail-status" className={`badge ${badge} px-3 py-1.5 text-sm`}>
           {order.status}
         </span>
       </div>
 
-      <div className="grid items-start gap-10 lg:grid-cols-3">
-        <div className="space-y-8 lg:col-span-2">
+      <div className="grid items-start gap-12 lg:grid-cols-3">
+        <div className="space-y-12 lg:col-span-2">
           <section>
-            <h3 className="section-label mb-3">Items</h3>
-            <div
-              data-testid="order-detail-items"
-              className="divide-y divide-stone-200 rounded-lg border border-stone-200 bg-white"
-            >
+            <h3 className="section-label mb-4">Items</h3>
+            <div data-testid="order-detail-items" className="border-t-2 border-ink-950">
               {order.orderItems.map((item) => (
                 <div
                   key={item.id}
                   data-testid={`order-detail-item-${item.bookId}`}
-                  className="flex items-start justify-between gap-4 p-5"
+                  className="flex items-start justify-between gap-4 border-b border-mist-200 py-5"
                 >
                   <div className="min-w-0">
-                    <p className="font-display text-lg font-semibold leading-snug text-ink-900">
+                    <p className="font-display text-xl font-bold leading-tight tracking-tight text-ink-950">
                       {item.book?.title ?? 'Unknown'}
                     </p>
-                    <p className="text-sm text-stone-600">{item.book?.author ?? 'Unknown'}</p>
-                    <p className="num mt-1 text-xs text-stone-500">
+                    <p className="text-sm text-ink-600">{item.book?.author ?? 'Unknown'}</p>
+                    <p className="num mt-1 font-mono text-xs text-ink-500">
                       ${item.price.toFixed(2)} x {item.quantity}
                     </p>
                   </div>
-                  <p className="num shrink-0 font-medium text-ink-900">
+                  <p className="num shrink-0 font-semibold text-ink-950">
                     ${((Math.round(item.price * 100) * item.quantity) / 100).toFixed(2)}
                   </p>
                 </div>
               ))}
-              <div className="flex items-baseline justify-between bg-stone-50 p-5">
-                <span className="font-medium text-ink-900">Total</span>
-                <span data-testid="order-detail-total" className="num font-display text-3xl font-semibold text-ink-900">
+              <div className="flex items-baseline justify-between bg-ink-950 px-5 py-5 text-white">
+                <span className="font-semibold">Total</span>
+                <span data-testid="order-detail-total" className="num font-display text-4xl font-extrabold tracking-tight">
                   ${order.totalAmount.toFixed(2)}
                 </span>
               </div>
@@ -137,18 +134,18 @@ export default function OrderDetailPage({ orderId, showToast }: OrderDetailPageP
 
           {order.events && order.events.length > 0 && (
             <section data-testid="order-detail-history">
-              <h3 className="section-label mb-4">Status history</h3>
-              <ol className="relative space-y-6 border-l border-stone-300 pl-6">
+              <h3 className="section-label mb-5">Status history</h3>
+              <ol className="relative space-y-6 border-l-2 border-ink-950 pl-7">
                 {order.events.map((event) => (
                   <li key={event.id} data-testid={`order-detail-history-${event.id}`} className="relative">
                     <span
                       aria-hidden="true"
-                      className="absolute -left-[29px] top-1.5 h-2.5 w-2.5 rounded-full border-2 border-white bg-brass-500 ring-1 ring-brass-500"
+                      className="absolute -left-[35px] top-1 h-3 w-3 bg-cobalt-500"
                     />
-                    <p className="text-sm font-medium text-ink-900">
+                    <p className="font-semibold text-ink-950">
                       {event.fromStatus ? `${event.fromStatus} to ${event.toStatus}` : `Placed as ${event.toStatus}`}
                     </p>
-                    <p className="text-xs text-stone-500">
+                    <p className="font-mono text-xs text-ink-500">
                       {new Date(event.createdAt).toLocaleString('en-US')}
                     </p>
                   </li>
@@ -158,15 +155,19 @@ export default function OrderDetailPage({ orderId, showToast }: OrderDetailPageP
           )}
         </div>
 
-        <aside className="rounded-lg border border-stone-200 bg-white p-6">
-          <h3 className="section-label mb-4">Delivery</h3>
-          <p data-testid="order-detail-customer" className="mb-1 font-medium text-ink-900">
-            {order.customerName}
-          </p>
-          <p className="mb-4 text-sm text-stone-600">{order.customerEmail}</p>
-          <p data-testid="order-detail-address" className="whitespace-pre-line text-sm text-stone-700">
-            {order.customerAddress}
-          </p>
+        <aside className="border-2 border-ink-950">
+          <div className="bg-ink-950 px-6 py-3">
+            <h3 className="font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-white">Delivery</h3>
+          </div>
+          <div className="p-6">
+            <p data-testid="order-detail-customer" className="mb-1 font-semibold text-ink-950">
+              {order.customerName}
+            </p>
+            <p className="mb-5 text-sm text-ink-600">{order.customerEmail}</p>
+            <p data-testid="order-detail-address" className="whitespace-pre-line text-sm text-ink-700">
+              {order.customerAddress}
+            </p>
+          </div>
         </aside>
       </div>
     </div>

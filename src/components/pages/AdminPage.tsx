@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { ORDER_STATUSES, OrderStatus, canTransition } from '@/lib/orderStatus'
 import { useSession } from 'next-auth/react'
-import { EditIcon, LockIcon, PackageIcon, TrashIcon } from '@/components/icons'
+import { EditIcon, TrashIcon } from '@/components/icons'
 
 interface AdminPageProps {
   showToast: (message: string, type: 'success' | 'error') => void
@@ -167,9 +167,9 @@ export default function AdminPage({ showToast }: AdminPageProps) {
   if (!session || (session.user as any)?.role !== 'ADMIN') {
     return (
       <div data-testid="admin-access-denied" className="empty-state">
-        <LockIcon className="mx-auto mb-4 h-8 w-8 text-stone-500" />
-        <h2 className="panel-title mb-2">Access Denied</h2>
-        <p className="text-sm text-stone-600">You need admin privileges to access this page.</p>
+        <p className="section-label mb-4">Restricted</p>
+        <h2 className="panel-title mb-3">Access Denied</h2>
+        <p className="text-ink-600">You need admin privileges to access this page.</p>
       </div>
     )
   }
@@ -180,21 +180,19 @@ export default function AdminPage({ showToast }: AdminPageProps) {
   }
 
   const tabClass = (tab: Tab) =>
-    `-mb-px border-b-2 px-1 py-3 text-sm font-medium transition-colors duration-150 ${
-      activeTab === tab
-        ? 'border-brass-500 text-ink-900'
-        : 'border-transparent text-stone-500 hover:text-ink-900'
+    `px-6 py-2.5 text-sm font-semibold transition-colors duration-150 ${
+      activeTab === tab ? 'bg-ink-950 text-white' : 'bg-white text-ink-950 hover:bg-mist-100'
     }`
 
   return (
     <div data-testid="admin-page" className="animate-fade-in">
-      <div className="mb-8">
-        <p className="section-label mb-3">Administration</p>
-        <h2 className="page-title mb-2">Admin Dashboard</h2>
-        <p className="text-stone-600">Manage books and orders</p>
+      <div className="mb-12">
+        <p className="section-label mb-6">06 / Administration</p>
+        <h2 className="page-title mb-4">Admin Dashboard</h2>
+        <p className="text-lg text-ink-600">Manage books and orders</p>
       </div>
 
-      <div className="mb-10 flex gap-8 border-b border-stone-200" role="tablist">
+      <div className="mb-12 inline-flex border-2 border-ink-950" role="tablist">
         <button
           data-testid="admin-books-tab"
           role="tab"
@@ -209,19 +207,23 @@ export default function AdminPage({ showToast }: AdminPageProps) {
           role="tab"
           aria-selected={activeTab === 'orders'}
           onClick={() => setActiveTab('orders')}
-          className={tabClass('orders')}
+          className={`${tabClass('orders')} border-l-2 border-ink-950`}
         >
           Orders ({orders.length})
         </button>
       </div>
 
       {activeTab === 'books' && (
-        <div className="grid items-start gap-10 lg:grid-cols-3">
+        <div className="grid items-start gap-12 lg:grid-cols-3">
           <div className="lg:col-span-1">
-            <div className="rounded-lg border border-stone-200 bg-white p-6 lg:sticky lg:top-24">
-              <h3 className="panel-title mb-6">{editingBook ? 'Edit Book' : 'Add New Book'}</h3>
+            <div className="border-2 border-ink-950 lg:sticky lg:top-24">
+              <div className="bg-ink-950 px-6 py-4">
+                <h3 className="font-display text-xl font-bold tracking-tight text-white">
+                  {editingBook ? 'Edit Book' : 'Add New Book'}
+                </h3>
+              </div>
 
-              <form data-testid="admin-book-form" onSubmit={handleBookSubmit} className="space-y-4">
+              <form data-testid="admin-book-form" onSubmit={handleBookSubmit} className="space-y-4 p-6">
                 <div>
                   <label htmlFor="book-title" className="label">Title *</label>
                   <input
@@ -322,28 +324,33 @@ export default function AdminPage({ showToast }: AdminPageProps) {
 
           <div data-testid="admin-books-list" className="lg:col-span-2">
             {loading ? (
-              <div aria-busy="true" className="space-y-3">
+              <div aria-busy="true" className="space-y-px">
                 {Array.from({ length: 4 }).map((_, i) => (
-                  <div key={i} className="skeleton h-24 w-full" />
+                  <div key={i} className="skeleton h-28 w-full" />
                 ))}
               </div>
             ) : (
-              <div className="divide-y divide-stone-200 rounded-lg border border-stone-200 bg-white">
-                {books.map((book) => (
+              <div className="border-t-2 border-ink-950">
+                {books.map((book, index) => (
                   <div
                     key={book.id}
                     data-testid={`admin-book-item-${book.id}`}
-                    className="flex items-start justify-between gap-4 p-5"
+                    className="grid grid-cols-[2rem_1fr_auto] gap-x-4 border-b border-mist-200 py-5"
                   >
-                    <div className="min-w-0 flex-1">
-                      <h4 className="font-display text-lg font-semibold leading-snug text-ink-900">{book.title}</h4>
-                      <p className="text-sm text-stone-600">by {book.author}</p>
-                      {book.isbn && <p className="mt-1 font-mono text-xs text-stone-500">ISBN {book.isbn}</p>}
+                    <span className="pt-1.5 font-mono text-xs text-ink-500">
+                      {String(index + 1).padStart(2, '0')}
+                    </span>
+                    <div className="min-w-0">
+                      <h4 className="font-display text-xl font-bold leading-tight tracking-tight text-ink-950">
+                        {book.title}
+                      </h4>
+                      <p className="text-sm text-ink-600">by {book.author}</p>
+                      {book.isbn && <p className="mt-1 font-mono text-xs text-ink-500">ISBN {book.isbn}</p>}
                       {book.description && (
-                        <p className="mt-2 line-clamp-2 text-sm text-stone-600">{book.description}</p>
+                        <p className="mt-2 line-clamp-2 text-sm text-ink-600">{book.description}</p>
                       )}
                       <div className="mt-3 flex items-center gap-4">
-                        <span className="num font-display text-xl font-semibold text-ink-900">
+                        <span className="num font-display text-2xl font-extrabold tracking-tight text-ink-950">
                           ${book.price.toFixed(2)}
                         </span>
                         <span
@@ -355,12 +362,12 @@ export default function AdminPage({ showToast }: AdminPageProps) {
                         </span>
                       </div>
                     </div>
-                    <div className="flex shrink-0 gap-1">
+                    <div className="flex shrink-0 items-start gap-1">
                       <button
                         data-testid={`admin-edit-book-${book.id}`}
                         onClick={() => handleEditBook(book)}
                         aria-label={`Edit ${book.title}`}
-                        className="rounded-md p-2 text-ink-700 transition-colors hover:bg-stone-100 hover:text-ink-900"
+                        className="p-2 text-ink-950 transition-colors hover:bg-ink-950 hover:text-white"
                       >
                         <EditIcon className="h-5 w-5" />
                       </button>
@@ -368,7 +375,7 @@ export default function AdminPage({ showToast }: AdminPageProps) {
                         data-testid={`admin-delete-book-${book.id}`}
                         onClick={() => handleDeleteBook(book.id)}
                         aria-label={`Delete ${book.title}`}
-                        className="rounded-md p-2 text-danger transition-colors hover:bg-danger-soft"
+                        className="p-2 text-danger transition-colors hover:bg-danger hover:text-white"
                       >
                         <TrashIcon className="h-5 w-5" />
                       </button>
@@ -384,37 +391,39 @@ export default function AdminPage({ showToast }: AdminPageProps) {
       {activeTab === 'orders' && (
         <div data-testid="admin-orders-section">
           {loading ? (
-            <div data-testid="admin-orders-loading" aria-busy="true" className="space-y-3">
+            <div data-testid="admin-orders-loading" aria-busy="true" className="space-y-px">
               {Array.from({ length: 3 }).map((_, i) => (
                 <div key={i} className="skeleton h-32 w-full" />
               ))}
             </div>
           ) : orders.length === 0 ? (
             <div data-testid="admin-no-orders" className="empty-state">
-              <PackageIcon className="mx-auto mb-4 h-8 w-8 text-stone-500" />
-              <h3 className="panel-title mb-2">No orders yet</h3>
-              <p className="text-sm text-stone-600">Orders will appear here once customers start purchasing.</p>
+              <p className="section-label mb-4">0 orders</p>
+              <h3 className="panel-title mb-3">No orders yet</h3>
+              <p className="max-w-md text-ink-600">Orders will appear here once customers start purchasing.</p>
             </div>
           ) : (
-            <div data-testid="admin-orders-list" className="space-y-4">
+            <div data-testid="admin-orders-list" className="border-t-2 border-ink-950">
               {orders.map((order) => (
                 <div
                   key={order.id}
                   data-testid={`admin-order-item-${order.id}`}
-                  className="rounded-lg border border-stone-200 bg-white"
+                  className="border-b border-mist-200 py-7"
                 >
-                  <div className="flex flex-wrap items-start justify-between gap-4 border-b border-stone-200 p-5">
+                  <div className="mb-5 flex flex-wrap items-start justify-between gap-4">
                     <div>
-                      <h4 className="font-display text-lg font-semibold text-ink-900">Order #{order.id}</h4>
-                      <p className="text-sm text-stone-600">
+                      <h4 className="font-display text-2xl font-bold tracking-tight text-ink-950">
+                        Order #{order.id}
+                      </h4>
+                      <p className="text-sm text-ink-600">
                         {order.customerName}, {order.customerEmail}
                       </p>
-                      <p className="mt-0.5 text-xs text-stone-500">
+                      <p className="mt-0.5 font-mono text-xs text-ink-500">
                         {new Date(order.orderDate).toLocaleDateString()}
                       </p>
                     </div>
                     <div className="text-right">
-                      <p className="num font-display text-2xl font-semibold text-ink-900">
+                      <p className="num font-display text-3xl font-extrabold tracking-tight text-ink-950">
                         ${order.totalAmount.toFixed(2)}
                       </p>
                       <label htmlFor={`status-${order.id}`} className="sr-only">
@@ -425,7 +434,7 @@ export default function AdminPage({ showToast }: AdminPageProps) {
                         data-testid={`admin-order-status-${order.id}`}
                         value={order.status}
                         onChange={(e) => handleUpdateOrderStatus(order.id, e.target.value)}
-                        className="input mt-2 w-auto py-1.5 pr-8 text-sm font-medium"
+                        className="input mt-2 w-auto py-1.5 pr-8 text-sm font-semibold"
                       >
                         {ORDER_STATUSES.map((status) => (
                           <option
@@ -440,20 +449,18 @@ export default function AdminPage({ showToast }: AdminPageProps) {
                     </div>
                   </div>
 
-                  <div className="p-5">
-                    <p className="section-label mb-3">Items</p>
-                    <div className="space-y-2">
-                      {order.orderItems?.map((item: any, idx: number) => (
-                        <div key={idx} className="flex justify-between text-sm">
-                          <span className="text-stone-700">
-                            {item.book?.title || 'Unknown'} <span className="text-stone-500">x {item.quantity}</span>
-                          </span>
-                          <span className="num font-medium text-ink-900">
-                            ${(item.price * item.quantity).toFixed(2)}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
+                  <p className="section-label mb-3">Items</p>
+                  <div className="divide-y divide-mist-200 border-y border-mist-200">
+                    {order.orderItems?.map((item: any, idx: number) => (
+                      <div key={idx} className="flex justify-between py-2.5 text-sm">
+                        <span className="text-ink-700">
+                          {item.book?.title || 'Unknown'} <span className="font-mono text-xs text-ink-500">x {item.quantity}</span>
+                        </span>
+                        <span className="num font-semibold text-ink-950">
+                          ${(item.price * item.quantity).toFixed(2)}
+                        </span>
+                      </div>
+                    ))}
                   </div>
                 </div>
               ))}

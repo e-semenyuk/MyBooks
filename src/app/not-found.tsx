@@ -1,13 +1,13 @@
 import Link from 'next/link'
-import { SearchOffIcon } from '@/components/icons'
 
 export default function NotFound() {
   return (
     <div data-testid="not-found-page" className="empty-state">
-      <SearchOffIcon className="mx-auto mb-4 h-8 w-8 text-stone-500" />
-      <p className="section-label mb-2">Error 404</p>
-      <h2 className="panel-title mb-2">Page not found</h2>
-      <p className="mb-6 text-sm text-stone-600">We could not find the page you were looking for.</p>
+      <p className="mb-6 font-mono text-sm text-ink-500">Error 404</p>
+      <h2 className="hero-title mb-6">Not found<span className="text-cobalt-500">.</span></h2>
+      <p className="mb-10 max-w-md text-lg text-ink-600">
+        We could not find the page you were looking for.
+      </p>
       <Link data-testid="not-found-home-link" href="/" className="btn btn-primary">
         Back to the store
       </Link>
