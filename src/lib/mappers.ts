@@ -2,6 +2,7 @@ import type {
   Book as BookRow,
   Order as OrderRow,
   OrderItem as OrderItemRow,
+  OrderEvent,
 } from '@prisma/client'
 import { fromCents } from '@/lib/money'
 import type { Book, Order, OrderItem, OrderItemWithBook, OrderWithItems } from '@/types'
@@ -27,9 +28,11 @@ export function mapOrderItem(row: ItemRow): OrderItem {
   }
 }
 
-export function mapOrder(row: OrderRow & { orderItems: (ItemRow & { book: BookRow })[] }): OrderWithItems
-export function mapOrder(row: OrderRow & { orderItems?: ItemRow[] }): Order
-export function mapOrder(row: OrderRow & { orderItems?: ItemRow[] }): Order {
+type EventRows = { events?: OrderEvent[] }
+
+export function mapOrder(row: OrderRow & EventRows & { orderItems: (ItemRow & { book: BookRow })[] }): OrderWithItems
+export function mapOrder(row: OrderRow & EventRows & { orderItems?: ItemRow[] }): Order
+export function mapOrder(row: OrderRow & EventRows & { orderItems?: ItemRow[] }): Order {
   const { totalCents, orderItems, ...rest } = row
   return {
     ...rest,

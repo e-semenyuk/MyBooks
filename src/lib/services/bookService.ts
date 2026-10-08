@@ -32,11 +32,20 @@ export class BookService {
       return this.getAllBooks()
     }
 
+    // ISBNs are stored with hyphens; people type them with or without
+    const compact = query.replace(/[\s-]/g, '')
+    const isbnMatches = /^[0-9Xx]{4,}$/.test(compact)
+      ? await prisma.$queryRaw<{ id: number }[]>`
+          SELECT "id" FROM "Book" WHERE REPLACE("isbn", '-', '') ILIKE ${'%' + compact + '%'}`
+      : []
+
     const rows = await prisma.book.findMany({
       where: {
         OR: [
           { title: { contains: query, mode: 'insensitive' } },
           { author: { contains: query, mode: 'insensitive' } },
+          { isbn: { contains: query, mode: 'insensitive' } },
+          { id: { in: isbnMatches.map((match) => match.id) } },
         ],
       },
       orderBy: { title: 'asc' },

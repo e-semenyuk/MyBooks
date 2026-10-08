@@ -33,8 +33,18 @@ export interface Order {
   totalAmount: number
   status: OrderStatus
   orderItems?: OrderItem[]
+  events?: OrderStatusEvent[]
   createdAt?: Date
   updatedAt?: Date
+}
+
+export interface OrderStatusEvent {
+  id: number
+  orderId: number
+  fromStatus: OrderStatus | null
+  toStatus: OrderStatus
+  actorId: number | null
+  createdAt: Date
 }
 
 export interface OrderItem {

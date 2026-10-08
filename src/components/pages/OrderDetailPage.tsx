@@ -121,6 +121,22 @@ export default function OrderDetailPage({ orderId, showToast }: OrderDetailPageP
           ))}
         </div>
 
+        {order.events && order.events.length > 0 && (
+          <div data-testid="order-detail-history" className="mt-6">
+            <h3 className="font-semibold text-gray-700 mb-2">Status history</h3>
+            <ol className="space-y-1 text-sm text-gray-700">
+              {order.events.map((event) => (
+                <li key={event.id} data-testid={`order-detail-history-${event.id}`}>
+                  <span className="font-semibold">
+                    {event.fromStatus ? `${event.fromStatus} → ${event.toStatus}` : `Placed as ${event.toStatus}`}
+                  </span>
+                  <span className="text-gray-500"> · {new Date(event.createdAt).toLocaleString('en-US')}</span>
+                </li>
+              ))}
+            </ol>
+          </div>
+        )}
+
         <div className="flex justify-between items-center pt-4">
           <span className="text-gray-600 uppercase tracking-wide text-sm">Total</span>
           <span data-testid="order-detail-total" className="text-3xl font-bold text-gradient">

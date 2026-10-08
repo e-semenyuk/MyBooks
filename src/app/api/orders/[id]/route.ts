@@ -24,9 +24,9 @@ export const GET = handle(async (_request, context) => {
 
 // PATCH /api/orders/:id - Update order status (admin only)
 export const PATCH = handle(async (request, context) => {
-  await requireAdminUser()
+  const admin = await requireAdminUser()
   const orderId = await parseId(context, 'order ID')
   const { status } = await parseBody(request, updateOrderStatusSchema)
 
-  return json(await OrderService.updateOrderStatus(orderId, status))
+  return json(await OrderService.updateOrderStatus(orderId, status, admin.id))
 })

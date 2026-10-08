@@ -86,6 +86,7 @@ model Order {
   totalCents      Int
   status          OrderStatus @default(CONFIRMED)
   orderItems      OrderItem[]
+  events          OrderEvent[]
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
 
@@ -110,3 +111,17 @@ model OrderItem {
   @@map("order_items")
 }
 
+
+// One row per status change. The first row of an order has no fromStatus.
+model OrderEvent {
+  id         Int          @id @default(autoincrement())
+  orderId    Int
+  order      Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  fromStatus OrderStatus?
+  toStatus   OrderStatus
+  actorId    Int?
+  createdAt  DateTime     @default(now())
+
+  @@index([orderId])
+  @@map("order_events")
+}

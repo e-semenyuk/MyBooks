@@ -14,6 +14,10 @@ import { CartService } from './cartService'
 import { BookService } from './bookService'
 
 const withItems = { orderItems: { include: { book: true } } } satisfies Prisma.OrderInclude
+const withItemsAndEvents = {
+  orderItems: { include: { book: true } },
+  events: { orderBy: { createdAt: 'asc' } },
+} satisfies Prisma.OrderInclude
 
 export class OrderNotFoundError extends Error {
   readonly code = 'ORDER_NOT_FOUND'
@@ -68,6 +72,7 @@ export class OrderService {
           customerAddress: data.customerAddress,
           totalCents,
           status: 'CONFIRMED',
+          events: { create: { fromStatus: null, toStatus: 'CONFIRMED', actorId: userId } },
         },
       })
 
@@ -113,7 +118,7 @@ export class OrderService {
   static async getOrderById(id: number): Promise<OrderWithItems | null> {
     const row = await prisma.order.findUnique({
       where: { id },
-      include: withItems,
+      include: withItemsAndEvents,
     })
     return row ? mapOrder(row) : null
   }
@@ -147,7 +152,7 @@ export class OrderService {
 
   // Moves an order along the allowed status flow. Cancelling puts the stock back.
   // Throws InvalidStatusError, OrderNotFoundError or InvalidTransitionError.
-  static async updateOrderStatus(id: number, status: unknown): Promise<Order> {
+  static async updateOrderStatus(id: number, status: unknown, actorId: number | null = null): Promise<Order> {
     if (!isOrderStatus(status)) {
       throw new InvalidStatusError(status)
     }
@@ -176,6 +181,10 @@ export class OrderService {
         throw new InvalidTransitionError(order.status, status)
       }
 
+      await tx.orderEvent.create({
+        data: { orderId: id, fromStatus: order.status, toStatus: status, actorId },
+      })
+
       if (status === 'CANCELLED') {
         for (const item of order.orderItems) {
           await tx.book.update({
@@ -185,7 +194,10 @@ export class OrderService {
         }
       }
 
-      const updated = await tx.order.findUniqueOrThrow({ where: { id } })
+      const updated = await tx.order.findUniqueOrThrow({
+        where: { id },
+        include: { events: { orderBy: { createdAt: 'asc' } } },
+      })
       return mapOrder(updated)
     })
   }

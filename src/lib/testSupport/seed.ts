@@ -28,7 +28,7 @@ export const SEED_BOOKS = [
 
 export async function clearAllData(prisma: PrismaClient): Promise<void> {
   await prisma.$executeRawUnsafe(
-    'TRUNCATE TABLE "order_items", "orders", "cart_items", "Book", "users" RESTART IDENTITY CASCADE'
+    'TRUNCATE TABLE "order_events", "order_items", "orders", "cart_items", "Book", "users" RESTART IDENTITY CASCADE'
   )
 }
 
