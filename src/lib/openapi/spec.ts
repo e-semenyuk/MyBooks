@@ -8,6 +8,9 @@ import {
   createBookSchema,
   createOrderSchema,
   forgotPasswordSchema,
+  localeSchema,
+  pushSubscriptionSchema,
+  pushUnsubscribeSchema,
   resetPasswordSchema,
   verifyEmailSchema,
   quoteSchema,
@@ -69,6 +72,7 @@ function buildDocument(): Json {
       { name: 'Cart' },
       { name: 'Orders' },
       { name: 'Accounts' },
+      { name: 'Notifications' },
       { name: 'Operations' },
       { name: 'Test support', description: 'Only available when ENABLE_TEST_ENDPOINTS=true; otherwise 404.' },
     ],
@@ -465,10 +469,84 @@ function buildDocument(): Json {
                 properties: {
                   id: { type: 'integer' }, email: { type: 'string' }, name: { type: 'string' },
                   role: { type: 'string', enum: ['USER', 'ADMIN'] }, emailVerified: { type: 'boolean' },
+                  locale: { type: 'string', enum: ['en', 'es', 'de'] }, pushEnabled: { type: 'boolean' },
                 },
               }),
             },
             '401': authErrors['401'],
+          },
+        },
+        put: {
+          tags: ['Accounts'],
+          summary: 'Choose the language of order emails and push messages',
+          security: [{ sessionCookie: [] }],
+          requestBody: { required: true, content: jsonContent(body(localeSchema)) },
+          responses: {
+            '200': { description: 'Updated account (same shape as GET)', content: jsonContent({ type: 'object' }) },
+            '400': errorResponse('VALIDATION_ERROR'),
+            '401': authErrors['401'],
+          },
+        },
+      },
+      '/api/push/public-key': {
+        get: {
+          tags: ['Notifications'],
+          summary: 'The key a browser needs to subscribe to push; null when push is not set up on the server',
+          responses: {
+            '200': {
+              description: 'Public key',
+              content: jsonContent({ type: 'object', properties: { publicKey: { type: ['string', 'null'] } } }),
+            },
+          },
+        },
+      },
+      '/api/push/subscribe': {
+        post: {
+          tags: ['Notifications'],
+          summary: 'Save this browser for push notifications about the user\'s orders',
+          security: [{ sessionCookie: [] }],
+          requestBody: { required: true, content: jsonContent(body(pushSubscriptionSchema)) },
+          responses: {
+            '201': { description: 'Saved', content: jsonContent({ type: 'object', properties: { message: { type: 'string' } } }) },
+            '400': errorResponse('VALIDATION_ERROR'),
+            '401': authErrors['401'],
+          },
+        },
+        delete: {
+          tags: ['Notifications'],
+          summary: 'Forget this browser',
+          security: [{ sessionCookie: [] }],
+          requestBody: { required: true, content: jsonContent(body(pushUnsubscribeSchema)) },
+          responses: {
+            '200': { description: 'Removed', content: jsonContent({ type: 'object', properties: { message: { type: 'string' } } }) },
+            '400': errorResponse('VALIDATION_ERROR'),
+            '401': authErrors['401'],
+          },
+        },
+      },
+      '/api/test/push': {
+        get: {
+          tags: ['Test support'],
+          summary: 'The latest push messages the app created, newest first',
+          parameters: [
+            { name: 'x-test-secret', in: 'header', required: true, schema: { type: 'string' } },
+            { name: 'email', in: 'query', required: false, schema: { type: 'string' }, description: 'Only messages for this user' },
+          ],
+          responses: {
+            '200': {
+              description: 'Up to 20 messages',
+              content: jsonContent({
+                type: 'array',
+                items: {
+                  type: 'object',
+                  properties: {
+                    id: { type: 'integer' }, userId: { type: 'integer' }, kind: { type: 'string' }, orderId: { type: ['integer', 'null'] },
+                    title: { type: 'string' }, body: { type: 'string' }, url: { type: 'string' },
+                    createdAt: { type: 'string', format: 'date-time' }, sentAt: { type: ['string', 'null'] }, error: { type: ['string', 'null'] },
+                  },
+                },
+              }),
+            },
           },
         },
       },
@@ -713,6 +791,11 @@ const OPERATION_IDS: Record<string, string> = {
   'patch /api/orders/{id}': 'updateOrderStatus',
   'post /api/register': 'register',
   'get /api/account/me': 'getAccount',
+  'put /api/account/me': 'setAccountLocale',
+  'get /api/push/public-key': 'getPushPublicKey',
+  'post /api/push/subscribe': 'subscribePush',
+  'delete /api/push/subscribe': 'unsubscribePush',
+  'get /api/test/push': 'listTestPushMessages',
   'post /api/account/forgot-password': 'forgotPassword',
   'post /api/account/reset-password': 'resetPassword',
   'post /api/account/verify-email': 'verifyEmail',

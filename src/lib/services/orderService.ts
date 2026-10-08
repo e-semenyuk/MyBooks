@@ -23,6 +23,7 @@ import {
 import { paymentProvider } from '@/lib/payments'
 import { cardBrand, normalizeCardNumber } from '@/lib/payments/card'
 import { paymentFailed } from '@/lib/payments/mockProvider'
+import { notifyOrderEvent } from '@/lib/notifications/service'
 import { CartService } from './cartService'
 import { BookService } from './bookService'
 
@@ -199,6 +200,7 @@ export class OrderService {
     }
 
     await CartService.clearCart(owner)
+    await notifyOrderEvent(order.id, 'ORDER_CONFIRMED')
 
     const saved = await prisma.order.findUniqueOrThrow({ where: { id: order.id }, include: withItems })
     return mapOrder(saved)
@@ -254,7 +256,7 @@ export class OrderService {
       throw new InvalidStatusError(status)
     }
 
-    return await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx) => {
       const order = await tx.order.findUnique({
         where: { id },
         include: { orderItems: true },
@@ -304,5 +306,8 @@ export class OrderService {
       })
       return mapOrder(updated)
     })
+    if (status === 'SHIPPED') await notifyOrderEvent(id, 'ORDER_SHIPPED')
+    if (status === 'CANCELLED') await notifyOrderEvent(id, 'ORDER_CANCELLED')
+    return result
   }
 }

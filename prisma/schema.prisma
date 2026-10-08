@@ -51,6 +51,7 @@ model User {
   name          String
   role          UserRole  @default(USER)
   emailVerifiedAt   DateTime?
+  locale            String    @default("en")
   failedLogins      Int       @default(0)
   lastFailedLoginAt DateTime?
   lockedUntil       DateTime?
@@ -61,6 +62,8 @@ model User {
   addresses     Address[]
   authTokens    AuthToken[]
   payments      Payment[]
+  pushSubscriptions PushSubscription[]
+  pushMessages  PushMessage[]
 
   @@index([email])
   @@map("users")
@@ -283,4 +286,36 @@ model Payment {
   @@index([orderId])
   @@index([userId])
   @@map("payments")
+}
+
+// A browser that agreed to receive push notifications.
+model PushSubscription {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@map("push_subscriptions")
+}
+
+// Every push the app decided to send, so tests and support can see them.
+model PushMessage {
+  id        Int       @id @default(autoincrement())
+  userId    Int
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kind      String
+  orderId   Int?
+  title     String
+  body      String
+  url       String
+  createdAt DateTime  @default(now())
+  sentAt    DateTime?
+  error     String?
+
+  @@index([userId])
+  @@map("push_messages")
 }

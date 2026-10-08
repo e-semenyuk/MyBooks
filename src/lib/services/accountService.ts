@@ -82,11 +82,23 @@ export class AccountService {
   static async me(userId: number) {
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: { id: true, email: true, name: true, role: true, emailVerifiedAt: true },
+      select: {
+        id: true, email: true, name: true, role: true, emailVerifiedAt: true, locale: true,
+        _count: { select: { pushSubscriptions: true } },
+      },
     })
     if (!user) throw ApiError.notFound('Account not found', 'USER_NOT_FOUND')
-    const { emailVerifiedAt, ...rest } = user
+    const { emailVerifiedAt, _count, ...rest } = user
     // When verification is not enforced nobody is asked to do it
-    return { ...rest, emailVerified: emailVerifiedAt !== null || !emailVerificationRequired() }
+    return {
+      ...rest,
+      emailVerified: emailVerifiedAt !== null || !emailVerificationRequired(),
+      pushEnabled: _count.pushSubscriptions > 0,
+    }
+  }
+
+  static async setLocale(userId: number, locale: string) {
+    await prisma.user.update({ where: { id: userId }, data: { locale } })
+    return this.me(userId)
   }
 }

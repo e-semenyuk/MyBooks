@@ -45,6 +45,7 @@ npm run dev                       # http://localhost:3000
 | `REQUIRE_EMAIL_VERIFICATION` | `true` or `false`. Default: on only when `SMTP_HOST` is set, because verification needs a working mail server |
 | `RATE_LIMIT_DISABLED` | `true` in test environments so repeated sign-ins are not throttled |
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM` | Mail server for verification and reset emails. Without `SMTP_HOST` emails are only stored in the outbox table |
+| `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` | Web push for order notifications. Generate keys with `npx web-push generate-vapid-keys`; the subject is a `mailto:` or https URL. Without them push messages are recorded in `push_messages` but not delivered (outside production they count as sent) |
 
 ### Scripts
 

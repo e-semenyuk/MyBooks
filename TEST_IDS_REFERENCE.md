@@ -407,6 +407,15 @@ Test IDs follow this pattern:
 - Every interactive element (buttons, inputs, forms) has a test ID
 - Loading states and empty states have test IDs for better test coverage
 
+### Notification settings (profile page)
+| Test ID | Element |
+|---|---|
+| `notification-settings` | Section container |
+| `notification-locale-select` | Language select (en, es, de) |
+| `push-status` | Text describing the push state |
+| `push-enable-button` | Turn on push (only when the server has VAPID keys and the browser supports push) |
+| `push-disable-button` | Turn off push |
+
 ## Testing Tips
 
 1. **Use specific selectors**: Prefer `data-testid={`cart-item-${id}`}` over class-based selectors

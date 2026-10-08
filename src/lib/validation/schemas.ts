@@ -186,3 +186,19 @@ export const addressSchema = z.object({
   postalCode: text('Postal code', 20),
   country: text('Country', 60),
 })
+
+export const localeSchema = z.object({
+  locale: z.enum(['en', 'es', 'de'], { error: 'Language must be en, es or de' }),
+})
+
+export const pushSubscriptionSchema = z.object({
+  endpoint: z.url('Endpoint must be a URL').max(1000, 'Endpoint is too long'),
+  keys: z.object({
+    p256dh: z.string({ error: 'Key p256dh is required' }).trim().min(1, 'Key p256dh is required').max(200),
+    auth: z.string({ error: 'Key auth is required' }).trim().min(1, 'Key auth is required').max(100),
+  }),
+})
+
+export const pushUnsubscribeSchema = z.object({
+  endpoint: z.string({ error: 'Endpoint is required' }).trim().min(1, 'Endpoint is required').max(1000),
+})

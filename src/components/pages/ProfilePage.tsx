@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useSession } from 'next-auth/react'
 import { ArrowRightIcon } from '@/components/icons'
 import AddressBook from '@/components/AddressBook'
+import NotificationSettings from '@/components/NotificationSettings'
 import VerifyEmailBanner from '@/components/VerifyEmailBanner'
 
 interface ProfilePageProps {
@@ -84,6 +85,8 @@ export default function ProfilePage({ showToast }: ProfilePageProps) {
       </div>
 
       <AddressBook showToast={showToast} />
+
+      <NotificationSettings showToast={showToast} />
 
       <div data-testid="order-history-section">
         <div className="flex items-baseline justify-between border-t-2 border-ink-950 pb-5 pt-5">

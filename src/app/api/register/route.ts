@@ -5,6 +5,7 @@ import { ApiError } from '@/lib/api/errors'
 import { registerSchema } from '@/lib/validation/schemas'
 import { AccountService } from '@/lib/services/accountService'
 import { emailVerificationRequired } from '@/lib/config'
+import { pickLocale } from '@/lib/notifications/messages'
 import { clientIp, rateLimitingEnabled, registerLimiter } from '@/lib/rateLimit'
 
 export const POST = handle(async (request) => {
@@ -36,6 +37,7 @@ export const POST = handle(async (request) => {
       password: hashedPassword,
       name,
       role: 'USER',
+      locale: pickLocale(request.headers.get('accept-language')),
       ...(emailVerificationRequired() ? {} : { emailVerifiedAt: new Date() }),
     },
     select: { id: true, email: true, name: true, role: true, createdAt: true },
