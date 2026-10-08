@@ -7,6 +7,9 @@ import {
   OrderStatus,
   canTransition,
   isOrderStatus,
+  nextStatus,
+  returnWindowOpen,
+  RETURN_WINDOW_DAYS,
 } from '@/lib/orderStatus'
 import { Order, OrderWithItems, CreateOrderRequest } from '@/types'
 import type { PromoCode } from '@prisma/client'
@@ -249,9 +252,69 @@ export class OrderService {
     return rows.map((row) => mapOrder(row))
   }
 
-  // Moves an order along the allowed status flow. Cancelling puts the stock back.
+  // Admin list with filters, newest first. Every filter is optional and they combine.
+  static async searchOrders(filters: {
+    status?: OrderStatus
+    shippingMethod?: ShippingMethodName
+    q?: string
+    from?: string
+    to?: string
+  }): Promise<Order[]> {
+    const where: Prisma.OrderWhereInput = {}
+    if (filters.status) where.status = filters.status
+    if (filters.shippingMethod) where.shippingMethod = filters.shippingMethod
+    if (filters.from || filters.to) {
+      where.orderDate = {
+        ...(filters.from ? { gte: new Date(`${filters.from}T00:00:00.000Z`) } : {}),
+        ...(filters.to ? { lte: new Date(`${filters.to}T23:59:59.999Z`) } : {}),
+      }
+    }
+    const q = filters.q?.trim()
+    if (q) {
+      const number = /^#?(\d{1,9})$/.exec(q)
+      where.OR = [
+        ...(number ? [{ id: Number(number[1]) }] : []),
+        { customerName: { contains: q, mode: 'insensitive' } },
+        { customerEmail: { contains: q, mode: 'insensitive' } },
+      ]
+    }
+    const rows = await prisma.order.findMany({ where, orderBy: { orderDate: 'desc' }, include: withItems })
+    return rows.map((row) => mapOrder(row))
+  }
+
+  // Admin shortcut: the next step of the fulfilment flow.
+  static async advanceOrder(id: number, actorId: number): Promise<Order> {
+    const order = await prisma.order.findUnique({ where: { id }, select: { status: true } })
+    if (!order) throw new OrderNotFoundError(id)
+    const next = nextStatus(order.status)
+    if (!next) throw new InvalidTransitionError(order.status, order.status)
+    return this.updateOrderStatus(id, next, actorId)
+  }
+
+  // A customer returns a delivered order within the return window: full refund,
+  // books go back on the shelf. Throws ApiError RETURN_WINDOW_CLOSED when too late.
+  static async returnOrder(id: number, actorId: number, reason: string): Promise<Order> {
+    const order = await prisma.order.findUnique({
+      where: { id },
+      include: { events: { where: { toStatus: 'DELIVERED' }, orderBy: { createdAt: 'desc' }, take: 1 } },
+    })
+    if (!order) throw new OrderNotFoundError(id)
+    if (!canTransition(order.status, 'RETURNED')) throw new InvalidTransitionError(order.status, 'RETURNED')
+    const deliveredAt = order.events[0]?.createdAt ?? order.updatedAt
+    if (!returnWindowOpen(deliveredAt)) {
+      throw ApiError.conflict(`The return window of ${RETURN_WINDOW_DAYS} days has passed`, 'RETURN_WINDOW_CLOSED')
+    }
+    return this.updateOrderStatus(id, 'RETURNED', actorId, reason || null)
+  }
+
+  // Moves an order along the allowed status flow. Cancelling or returning puts the stock back and refunds.
   // Throws InvalidStatusError, OrderNotFoundError or InvalidTransitionError.
-  static async updateOrderStatus(id: number, status: unknown, actorId: number | null = null): Promise<Order> {
+  static async updateOrderStatus(
+    id: number,
+    status: unknown,
+    actorId: number | null = null,
+    note: string | null = null
+  ): Promise<Order> {
     if (!isOrderStatus(status)) {
       throw new InvalidStatusError(status)
     }
@@ -281,10 +344,11 @@ export class OrderService {
       }
 
       await tx.orderEvent.create({
-        data: { orderId: id, fromStatus: order.status, toStatus: status, actorId },
+        data: { orderId: id, fromStatus: order.status, toStatus: status, actorId, note },
       })
 
-      if (status === 'CANCELLED') {
+      // A cancelled or returned order gives the books and the money back
+      if (status === 'CANCELLED' || status === 'RETURNED') {
         for (const item of order.orderItems) {
           await tx.book.update({
             where: { id: item.bookId },

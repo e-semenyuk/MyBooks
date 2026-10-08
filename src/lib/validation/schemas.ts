@@ -135,6 +135,16 @@ export const orderFilterSchema = z.object({
   email: z.string().optional(),
   status: z.string().optional(),
   userId: z.coerce.number().int().positive().optional(),
+  // Admin search: order number, customer name or email
+  q: z.string().trim().max(100).optional(),
+  shippingMethod: z.enum(SHIPPING_METHODS, { error: 'Shipping method must be STANDARD or EXPRESS' }).optional(),
+  // Order date range, inclusive, as YYYY-MM-DD
+  from: z.iso.date({ error: 'from must be a date like 2026-10-31' }).optional(),
+  to: z.iso.date({ error: 'to must be a date like 2026-10-31' }).optional(),
+})
+
+export const returnOrderSchema = z.object({
+  reason: z.string().trim().max(500, 'Reason must be at most 500 characters').optional().default(''),
 })
 
 export const BOOK_SORTS = ['title', 'price_asc', 'price_desc', 'newest'] as const

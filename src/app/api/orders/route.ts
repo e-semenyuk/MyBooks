@@ -19,9 +19,16 @@ export const GET = handle(async (request) => {
     return json(await OrderService.getOrdersByUserId(user.id))
   }
 
-  const { email, status, userId } = orderFilterSchema.parse(
+  const { email, status, userId, q, shippingMethod, from, to } = orderFilterSchema.parse(
     Object.fromEntries(request.nextUrl.searchParams)
   )
+
+  if (status && !isOrderStatus(status)) {
+    throw ApiError.badRequest(`Invalid order status: ${status}`, 'INVALID_STATUS')
+  }
+  if (q || shippingMethod || from || to) {
+    return json(await OrderService.searchOrders({ status: status as any, shippingMethod, q, from, to }))
+  }
 
   if (email) return json(await OrderService.getOrdersByCustomerEmail(email))
   if (status) {

@@ -6,6 +6,7 @@ export const ORDER_STATUSES = [
   'SHIPPED',
   'DELIVERED',
   'CANCELLED',
+  'RETURNED',
 ] as const
 
 export type OrderStatus = (typeof ORDER_STATUSES)[number]
@@ -14,8 +15,27 @@ const TRANSITIONS: Record<OrderStatus, readonly OrderStatus[]> = {
   PENDING: ['CONFIRMED', 'CANCELLED'],
   CONFIRMED: ['SHIPPED', 'CANCELLED'],
   SHIPPED: ['DELIVERED'],
-  DELIVERED: [],
+  DELIVERED: ['RETURNED'],
   CANCELLED: [],
+  RETURNED: [],
+}
+
+// The step an admin takes when moving an order forward (no skipping, no cancel).
+const NEXT: Partial<Record<OrderStatus, OrderStatus>> = {
+  PENDING: 'CONFIRMED',
+  CONFIRMED: 'SHIPPED',
+  SHIPPED: 'DELIVERED',
+}
+
+export function nextStatus(from: OrderStatus): OrderStatus | null {
+  return NEXT[from] ?? null
+}
+
+// A delivered order can be returned for this many days after delivery.
+export const RETURN_WINDOW_DAYS = 30
+
+export function returnWindowOpen(deliveredAt: Date, now: Date = new Date()): boolean {
+  return now.getTime() - deliveredAt.getTime() <= RETURN_WINDOW_DAYS * 24 * 60 * 60 * 1000
 }
 
 export function isOrderStatus(value: unknown): value is OrderStatus {

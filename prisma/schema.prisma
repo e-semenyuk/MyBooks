@@ -42,6 +42,7 @@ enum OrderStatus {
   SHIPPED
   DELIVERED
   CANCELLED
+  RETURNED
 }
 
 model User {
@@ -163,6 +164,7 @@ model OrderEvent {
   fromStatus OrderStatus?
   toStatus   OrderStatus
   actorId    Int?
+  note       String?
   createdAt  DateTime     @default(now())
 
   @@index([orderId])

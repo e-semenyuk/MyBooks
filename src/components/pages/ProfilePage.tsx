@@ -64,6 +64,8 @@ export default function ProfilePage({ showToast }: ProfilePageProps) {
         return 'badge-success'
       case 'CANCELLED':
         return 'badge-danger'
+      case 'RETURNED':
+        return 'badge-warning'
       default:
         return 'badge-primary'
     }

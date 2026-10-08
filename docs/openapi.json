@@ -1741,6 +1741,44 @@
               "type": "integer"
             },
             "description": "Admin only"
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Admin only. Order number (12 or #12), or part of the customer name or email"
+          },
+          {
+            "name": "shippingMethod",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "STANDARD",
+                "EXPRESS"
+              ]
+            },
+            "description": "Admin only"
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            },
+            "description": "Admin only. Orders placed on or after this date (UTC)"
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            },
+            "description": "Admin only. Orders placed on or before this date (UTC)"
           }
         ],
         "responses": {
@@ -2267,6 +2305,180 @@
           }
         },
         "operationId": "cancelOrder"
+      }
+    },
+    "/api/orders/{id}/advance": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "description": "Order id",
+          "schema": {
+            "type": "integer",
+            "minimum": 1
+          }
+        }
+      ],
+      "post": {
+        "tags": [
+          "Orders"
+        ],
+        "summary": "Admin: move the order to the next fulfilment step (Pending, Confirmed, Shipped, Delivered)",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The updated order",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Order"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in (code UNAUTHORIZED)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "ORDER_NOT_FOUND",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "INVALID_TRANSITION (the order is Delivered, Cancelled or Returned)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "advanceOrder"
+      }
+    },
+    "/api/orders/{id}/return": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "description": "Order id",
+          "schema": {
+            "type": "integer",
+            "minimum": 1
+          }
+        }
+      ],
+      "post": {
+        "tags": [
+          "Orders"
+        ],
+        "summary": "Return a delivered order and get the full payment back. Owner only; another user's order answers 404.",
+        "description": "Allowed for 30 days after delivery. Puts the books back in stock, refunds the payment and sets the status to RETURNED. The reason is optional and shown in the status history.",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "reason": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 500
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The returned order",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Order"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed (code VALIDATION_ERROR, INVALID_JSON or INVALID_ID)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in (code UNAUTHORIZED)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "ORDER_NOT_FOUND",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "INVALID_TRANSITION (not delivered) or RETURN_WINDOW_CLOSED (more than 30 days after delivery)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "returnOrder"
       }
     },
     "/api/orders/{id}/invoice": {
@@ -3422,7 +3634,8 @@
           "CONFIRMED",
           "SHIPPED",
           "DELIVERED",
-          "CANCELLED"
+          "CANCELLED",
+          "RETURNED"
         ]
       },
       "User": {
@@ -3661,6 +3874,12 @@
           "actorId": {
             "type": [
               "integer",
+              "null"
+            ]
+          },
+          "note": {
+            "type": [
+              "string",
               "null"
             ]
           },

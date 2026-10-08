@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { ORDER_STATUSES, OrderStatus, canTransition } from '@/lib/orderStatus'
+import { ORDER_STATUSES, OrderStatus, canTransition, nextStatus } from '@/lib/orderStatus'
 import { useSession } from 'next-auth/react'
 import { EditIcon, TrashIcon } from '@/components/icons'
 import BookCover from '@/components/BookCover'
@@ -39,6 +39,7 @@ interface Order {
   status: OrderStatus
   orderDate: string
   orderItems: any[]
+  shippingMethod?: string
 }
 
 export default function AdminPage({ showToast }: AdminPageProps) {
@@ -53,6 +54,7 @@ export default function AdminPage({ showToast }: AdminPageProps) {
   const [renaming, setRenaming] = useState<{ id: number; name: string } | null>(null)
   const [coverFile, setCoverFile] = useState<File | null>(null)
   const [fileInputKey, setFileInputKey] = useState(0)
+  const [orderFilters, setOrderFilters] = useState({ status: '', shippingMethod: '', q: '', from: '', to: '' })
 
   const emptyForm = {
     title: '',
@@ -155,12 +157,14 @@ export default function AdminPage({ showToast }: AdminPageProps) {
     }
   }
 
-  const loadOrders = async () => {
+  const loadOrders = async (filters = orderFilters) => {
     setLoading(true)
     try {
-      const response = await fetch('/api/orders')
-      const data = await response.json()
-      setOrders(data)
+      const params = new URLSearchParams()
+      for (const [key, value] of Object.entries(filters)) if (value) params.set(key, value)
+      const response = await fetch(`/api/orders${params.size ? `?${params}` : ''}`)
+      if (!response.ok) throw new Error('Request failed')
+      setOrders(await response.json())
     } catch (error) {
       showToast('Failed to load orders', 'error')
     } finally {
@@ -244,6 +248,20 @@ export default function AdminPage({ showToast }: AdminPageProps) {
       }
     } catch (error) {
       showToast('Failed to delete book', 'error')
+    }
+  }
+
+  const handleAdvanceOrder = async (orderId: number) => {
+    try {
+      const response = await fetch(`/api/orders/${orderId}/advance`, { method: 'POST' })
+      if (response.ok) {
+        showToast('Order status updated successfully', 'success')
+        loadOrders()
+      } else {
+        showToast('Failed to update order status', 'error')
+      }
+    } catch {
+      showToast('Failed to update order status', 'error')
     }
   }
 
@@ -661,6 +679,92 @@ export default function AdminPage({ showToast }: AdminPageProps) {
 
       {activeTab === 'orders' && (
         <div data-testid="admin-orders-section">
+          <form
+            data-testid="admin-order-filters"
+            className="mb-8 grid gap-4 border-b border-mist-200 pb-8 sm:grid-cols-2 lg:grid-cols-6"
+            onSubmit={(e) => {
+              e.preventDefault()
+              loadOrders()
+            }}
+          >
+            <div className="lg:col-span-2">
+              <label htmlFor="order-filter-q" className="label">Search</label>
+              <input
+                id="order-filter-q"
+                data-testid="admin-order-filter-search"
+                className="input"
+                placeholder="Order number, name or email"
+                value={orderFilters.q}
+                onChange={(e) => setOrderFilters({ ...orderFilters, q: e.target.value })}
+              />
+            </div>
+            <div>
+              <label htmlFor="order-filter-status" className="label">Status</label>
+              <select
+                id="order-filter-status"
+                data-testid="admin-order-filter-status"
+                className="input"
+                value={orderFilters.status}
+                onChange={(e) => setOrderFilters({ ...orderFilters, status: e.target.value })}
+              >
+                <option value="">All</option>
+                {ORDER_STATUSES.map((status) => (
+                  <option key={status} value={status}>{status.charAt(0) + status.slice(1).toLowerCase()}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label htmlFor="order-filter-shipping" className="label">Shipping</label>
+              <select
+                id="order-filter-shipping"
+                data-testid="admin-order-filter-shipping"
+                className="input"
+                value={orderFilters.shippingMethod}
+                onChange={(e) => setOrderFilters({ ...orderFilters, shippingMethod: e.target.value })}
+              >
+                <option value="">All</option>
+                <option value="STANDARD">Standard</option>
+                <option value="EXPRESS">Express</option>
+              </select>
+            </div>
+            <div>
+              <label htmlFor="order-filter-from" className="label">From</label>
+              <input
+                id="order-filter-from"
+                type="date"
+                data-testid="admin-order-filter-from"
+                className="input"
+                value={orderFilters.from}
+                onChange={(e) => setOrderFilters({ ...orderFilters, from: e.target.value })}
+              />
+            </div>
+            <div>
+              <label htmlFor="order-filter-to" className="label">To</label>
+              <input
+                id="order-filter-to"
+                type="date"
+                data-testid="admin-order-filter-to"
+                className="input"
+                value={orderFilters.to}
+                onChange={(e) => setOrderFilters({ ...orderFilters, to: e.target.value })}
+              />
+            </div>
+            <div className="flex gap-2 sm:col-span-2 lg:col-span-6">
+              <button type="submit" data-testid="admin-order-filter-apply" className="btn btn-primary">Apply filters</button>
+              <button
+                type="button"
+                data-testid="admin-order-filter-clear"
+                className="btn btn-secondary"
+                onClick={() => {
+                  const cleared = { status: '', shippingMethod: '', q: '', from: '', to: '' }
+                  setOrderFilters(cleared)
+                  loadOrders(cleared)
+                }}
+              >
+                Clear
+              </button>
+            </div>
+          </form>
           {loading ? (
             <div data-testid="admin-orders-loading" aria-busy="true" className="space-y-px">
               {Array.from({ length: 3 }).map((_, i) => (
@@ -670,8 +774,12 @@ export default function AdminPage({ showToast }: AdminPageProps) {
           ) : orders.length === 0 ? (
             <div data-testid="admin-no-orders" className="empty-state">
               <p className="section-label mb-4">0 orders</p>
-              <h3 className="panel-title mb-3">No orders yet</h3>
-              <p className="max-w-md text-ink-600">Orders will appear here once customers start purchasing.</p>
+              <h3 className="panel-title mb-3">{Object.values(orderFilters).some(Boolean) ? 'No orders match' : 'No orders yet'}</h3>
+              <p className="max-w-md text-ink-600">
+                {Object.values(orderFilters).some(Boolean)
+                  ? 'Change or clear the filters to see more orders.'
+                  : 'Orders will appear here once customers start purchasing.'}
+              </p>
             </div>
           ) : (
             <div data-testid="admin-orders-list" className="border-t-2 border-ink-950">
@@ -697,6 +805,9 @@ export default function AdminPage({ showToast }: AdminPageProps) {
                       <p className="num font-display text-3xl font-extrabold tracking-tight text-ink-950">
                         ${order.totalAmount.toFixed(2)}
                       </p>
+                      {order.shippingMethod === 'EXPRESS' && (
+                        <span data-testid={`admin-order-express-${order.id}`} className="badge badge-primary mr-2 align-middle">Express</span>
+                      )}
                       <label htmlFor={`status-${order.id}`} className="sr-only">
                         Status of order {order.id}
                       </label>
@@ -717,6 +828,16 @@ export default function AdminPage({ showToast }: AdminPageProps) {
                           </option>
                         ))}
                       </select>
+                      {nextStatus(order.status) && (
+                        <button
+                          type="button"
+                          data-testid={`admin-order-advance-${order.id}`}
+                          onClick={() => handleAdvanceOrder(order.id)}
+                          className="btn btn-primary btn-sm ml-2 mt-2"
+                        >
+                          Mark as {nextStatus(order.status)!.toLowerCase()}
+                        </button>
+                      )}
                     </div>
                   </div>
 

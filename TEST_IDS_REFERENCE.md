@@ -416,6 +416,30 @@ Test IDs follow this pattern:
 | `push-enable-button` | Turn on push (only when the server has VAPID keys and the browser supports push) |
 | `push-disable-button` | Turn off push |
 
+### Admin order filters and fulfilment
+| Test ID | Element |
+|---|---|
+| `admin-order-filters` | Filter form |
+| `admin-order-filter-search` | Search by order number, name or email |
+| `admin-order-filter-status` | Status select |
+| `admin-order-filter-shipping` | Shipping method select |
+| `admin-order-filter-from`, `admin-order-filter-to` | Order date range |
+| `admin-order-filter-apply`, `admin-order-filter-clear` | Apply and clear buttons |
+| `admin-order-advance-{id}` | Button that moves the order to the next status |
+| `admin-order-express-{id}` | Express badge on an order |
+
+### Returns (order detail page)
+| Test ID | Element |
+|---|---|
+| `order-return-section` | Container, shown for delivered orders inside the 30 day window |
+| `order-return-button` | Opens the return dialog |
+| `order-return-deadline` | Last day a return is accepted |
+| `order-return-dialog` | Confirmation dialog |
+| `order-return-reason-input` | Optional reason |
+| `order-return-confirm-button`, `order-return-keep-button` | Confirm or back out |
+| `order-return-error` | Error text in the dialog |
+| `order-detail-history-note-{eventId}` | Reason shown in the status history |
+
 ## Testing Tips
 
 1. **Use specific selectors**: Prefer `data-testid={`cart-item-${id}`}` over class-based selectors

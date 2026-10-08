@@ -77,6 +77,7 @@ export interface OrderStatusEvent {
   fromStatus: OrderStatus | null
   toStatus: OrderStatus
   actorId: number | null
+  note: string | null
   createdAt: Date
 }
 

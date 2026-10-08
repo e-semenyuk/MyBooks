@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { ArrowLeftIcon } from '@/components/icons'
-import { canTransition } from '@/lib/orderStatus'
+import { RETURN_WINDOW_DAYS, canTransition } from '@/lib/orderStatus'
 import { OrderWithItems } from '@/types'
 
 interface OrderDetailPageProps {
@@ -18,6 +18,10 @@ export default function OrderDetailPage({ orderId, showToast }: OrderDetailPageP
   const [confirmingCancel, setConfirmingCancel] = useState(false)
   const [cancelling, setCancelling] = useState(false)
   const [cancelError, setCancelError] = useState<string | null>(null)
+  const [confirmingReturn, setConfirmingReturn] = useState(false)
+  const [returning, setReturning] = useState(false)
+  const [returnReason, setReturnReason] = useState('')
+  const [returnError, setReturnError] = useState<string | null>(null)
 
   useEffect(() => {
     const load = async () => {
@@ -67,6 +71,37 @@ export default function OrderDetailPage({ orderId, showToast }: OrderDetailPageP
     }
   }
 
+  const returnOrder = async () => {
+    setReturning(true)
+    setReturnError(null)
+    try {
+      const response = await fetch(`/api/orders/${orderId}/return`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reason: returnReason }),
+      })
+      if (response.ok) {
+        setConfirmingReturn(false)
+        showToast('Return accepted. Your payment is being refunded.', 'success')
+        const fresh = await fetch(`/api/orders/${orderId}`)
+        if (fresh.ok) setOrder(await fresh.json())
+      } else {
+        const data = await response.json().catch(() => null)
+        setReturnError(
+          data?.code === 'RETURN_WINDOW_CLOSED'
+            ? 'The 30 day return period for this order has ended.'
+            : response.status === 409
+              ? 'This order cannot be returned.'
+              : 'Unable to return order. Try again later.'
+        )
+      }
+    } catch {
+      setReturnError('Unable to return order. Try again later.')
+    } finally {
+      setReturning(false)
+    }
+  }
+
   if (loading) {
     return (
       <div data-testid="order-detail-loading" aria-busy="true" className="space-y-4">
@@ -94,8 +129,13 @@ export default function OrderDetailPage({ orderId, showToast }: OrderDetailPageP
   const badge =
     order.status === 'DELIVERED' ? 'badge-success'
     : order.status === 'CANCELLED' ? 'badge-danger'
+    : order.status === 'RETURNED' ? 'badge-warning'
     : order.status === 'PENDING' ? 'badge-warning'
     : 'badge-primary'
+
+  const deliveredEvent = order.events?.filter((e) => e.toStatus === 'DELIVERED').pop()
+  const returnDeadline = deliveredEvent ? new Date(new Date(deliveredEvent.createdAt).getTime() + RETURN_WINDOW_DAYS * 86_400_000) : null
+  const canReturn = canTransition(order.status, 'RETURNED') && (!returnDeadline || returnDeadline.getTime() >= Date.now())
 
   return (
     <div data-testid="order-detail-page" className="animate-fade-in">
@@ -199,6 +239,11 @@ export default function OrderDetailPage({ orderId, showToast }: OrderDetailPageP
                     <p className="font-mono text-xs text-ink-500">
                       {new Date(event.createdAt).toLocaleString('en-US')}
                     </p>
+                    {event.note && (
+                      <p data-testid={`order-detail-history-note-${event.id}`} className="mt-1 text-sm text-ink-600">
+                        {event.note}
+                      </p>
+                    )}
                   </li>
                 ))}
               </ol>
@@ -270,6 +315,61 @@ export default function OrderDetailPage({ orderId, showToast }: OrderDetailPageP
                       setCancelError(null)
                     }}
                     disabled={cancelling}
+                    className="btn btn-secondary flex-1"
+                  >
+                    Keep order
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {canReturn && (
+          <div data-testid="order-return-section">
+            {!confirmingReturn ? (
+              <div>
+                <button data-testid="order-return-button" onClick={() => setConfirmingReturn(true)} className="btn btn-outline w-full">
+                  Return order
+                </button>
+                {returnDeadline && (
+                  <p data-testid="order-return-deadline" className="mt-2 text-xs text-ink-600">
+                    Returns are accepted until {returnDeadline.toLocaleDateString('en-US')}.
+                  </p>
+                )}
+              </div>
+            ) : (
+              <div data-testid="order-return-dialog" role="alertdialog" aria-labelledby="return-title" className="border-2 border-ink-950 p-5">
+                <h3 id="return-title" className="font-display text-lg font-bold text-ink-950">Return this order?</h3>
+                <p className="mt-1 text-sm text-ink-600">
+                  The whole order is refunded to your card and the books go back on the shelf.
+                </p>
+                <label htmlFor="return-reason" className="label mt-4">Reason (optional)</label>
+                <textarea
+                  id="return-reason"
+                  data-testid="order-return-reason-input"
+                  className="input"
+                  rows={3}
+                  maxLength={500}
+                  value={returnReason}
+                  onChange={(e) => setReturnReason(e.target.value)}
+                />
+                {returnError && (
+                  <p data-testid="order-return-error" role="alert" className="mt-3 text-sm font-semibold text-danger">
+                    {returnError}
+                  </p>
+                )}
+                <div className="mt-4 flex gap-2">
+                  <button data-testid="order-return-confirm-button" onClick={returnOrder} disabled={returning} className="btn btn-primary flex-1">
+                    {returning ? 'Returning...' : 'Yes, return order'}
+                  </button>
+                  <button
+                    data-testid="order-return-keep-button"
+                    onClick={() => {
+                      setConfirmingReturn(false)
+                      setReturnError(null)
+                    }}
+                    disabled={returning}
                     className="btn btn-secondary flex-1"
                   >
                     Keep order
