@@ -11,10 +11,10 @@ interface NavigationProps {
 }
 
 const linkBase =
-  'relative flex h-16 items-center gap-2 px-3 text-sm font-semibold transition-colors duration-150 sm:px-4'
+  'relative flex h-16 items-center gap-2 px-2 text-sm font-semibold transition-colors duration-150 sm:px-4'
 const linkIdle = 'text-ink-600 hover:text-ink-950'
 const linkActive =
-  'text-ink-950 after:absolute after:inset-x-3 after:bottom-0 after:h-[3px] after:bg-cobalt-500 sm:after:inset-x-4'
+  'text-ink-950 after:absolute after:inset-x-2 after:bottom-0 after:h-[3px] after:bg-cobalt-500 sm:after:inset-x-4'
 
 export default function Navigation({ cartCount }: NavigationProps) {
   const { data: session, status } = useSession()
@@ -26,14 +26,14 @@ export default function Navigation({ cartCount }: NavigationProps) {
 
   return (
     <nav data-testid="main-navigation" className="sticky top-0 z-50 border-b-2 border-ink-950 bg-white">
-      <div className="mx-auto flex h-16 w-full max-w-page items-center justify-between px-6">
+      <div className="mx-auto flex h-16 w-full max-w-page items-center justify-between px-4 sm:px-6">
         <button
           data-testid="nav-logo-button"
           onClick={() => onNavigate('home')}
           className="flex items-center gap-2.5"
         >
           <span aria-hidden="true" className="h-4 w-4 bg-cobalt-500" />
-          <span className="font-display text-2xl font-extrabold tracking-tight text-ink-950">
+          <span className="font-display text-2xl font-extrabold tracking-tight text-ink-950 max-sm:sr-only">
             bookstore
           </span>
         </button>
@@ -75,7 +75,7 @@ export default function Navigation({ cartCount }: NavigationProps) {
             </button>
           )}
 
-          <span aria-hidden="true" className="mx-2 hidden h-6 w-px bg-mist-300 sm:block" />
+          <span aria-hidden="true" className="mx-1 hidden h-6 w-px bg-mist-300 sm:mx-2 sm:block" />
 
           {status === 'loading' ? (
             <div data-testid="nav-loading" className="flex h-16 items-center px-3">

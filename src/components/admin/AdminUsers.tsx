@@ -127,7 +127,7 @@ export default function AdminUsers({ showToast }: Props) {
       ) : (
         <>
           <p className="mb-3 font-mono text-xs text-ink-600" data-testid="admin-users-total">{total} users</p>
-          <div className="overflow-x-auto">
+          <div className="relative overflow-x-auto">
             <table data-testid="admin-users-table" className="data-table">
               <thead>
                 <tr>

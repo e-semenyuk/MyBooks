@@ -96,7 +96,7 @@ export default function BookDetailPage({ bookId, showToast, updateCartCount }: B
 
       <div className="grid gap-12 md:grid-cols-12">
         <div className="md:col-span-5">
-          <BookCover id={book.id} title={book.title} coverUrl={book.coverUrl} />
+          <BookCover id={book.id} title={book.title} coverUrl={book.coverUrl} tall />
         </div>
 
         <div className="md:col-span-7">

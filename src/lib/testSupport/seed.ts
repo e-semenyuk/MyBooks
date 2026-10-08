@@ -1,3 +1,4 @@
+import { BOOK_IMAGES } from '@/lib/testSupport/bookImages'
 import type { PrismaClient } from '@prisma/client'
 import bcrypt from 'bcryptjs'
 import { slugify } from '../slug'
@@ -113,6 +114,7 @@ export async function resetAndSeed(
     await prisma.book.create({
       data: {
         ...book,
+        imageUrl: BOOK_IMAGES[book.title] ?? null,
         categories: { create: categories.map((name) => ({ categoryId: categoryIds.get(name)! })) },
       },
     })

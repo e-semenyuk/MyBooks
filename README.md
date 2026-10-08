@@ -4,7 +4,7 @@ Digital bookstore built with Next.js 14 (App Router), TypeScript, Prisma and Pos
 
 ## What it does
 
-- Browse the catalog with categories, filters (category, author, price), sorting and pages; the state is in the URL. Search by title, author or ISBN. Every book has a detail page and an optional uploaded cover (JPEG or PNG, up to 2 MB, stored in the database)
+- Browse the catalog with categories, filters (category, author, price), sorting and pages; the state is in the URL. Search by title, author or ISBN. Every book has a detail page and an optional cover: an uploaded picture (JPEG or PNG, up to 2 MB, stored in the database) or a linked picture (`imageUrl`, an http or https link; the demo books use Open Library covers). An upload wins over the link; a picture that fails to load falls back to generated art
 - Guest cart that follows you into your account at sign-in; stock is checked when you add items
 - Checkout needs an account. It offers Standard or Express shipping and promo codes, shows the full breakdown (subtotal, discount, shipping, tax) takes payment with a card (mock provider, test cards listed in `TEST_IDS_REFERENCE.md`) and creates an order (status flow PENDING → CONFIRMED → SHIPPED → DELIVERED, or CANCELLED) and reduces stock
 - A PDF invoice for every paid order (still available, marked Refunded, after a refund)
@@ -61,7 +61,7 @@ npm run dev                       # http://localhost:3000
 
 ## Design
 
-Swiss cobalt: white page, true black structure (2px rules, black footer), one cobalt accent, square corners, no shadows or gradients. Bricolage Grotesque for headlines and prices, Hanken Grotesk for text, JetBrains Mono for small labels and metadata. Colors, shared component classes (`btn`, `input`, `label`, `badge`, `data-table`) and the toast style are defined in `tailwind.config.ts` and `src/app/globals.css`; icons are in `src/components/icons.tsx`. Book covers are generated flat geometric compositions (`BookCover`) until real cover images exist.
+Swiss cobalt: white page, true black structure (2px rules, black footer), one cobalt accent, square corners, no shadows or gradients. Bricolage Grotesque for headlines and prices, Hanken Grotesk for text, JetBrains Mono for small labels and metadata. Colors, shared component classes (`btn`, `input`, `label`, `badge`, `data-table`) and the toast style are defined in `tailwind.config.ts` and `src/app/globals.css`; icons are in `src/components/icons.tsx`. Books without a picture get a generated flat geometric cover (`BookCover`). Selects and number fields are restyled in `globals.css` so every control has the same height and square corners in all browsers.
 
 ## API
 

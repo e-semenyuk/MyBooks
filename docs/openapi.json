@@ -274,6 +274,26 @@
                     "minimum": 0,
                     "maximum": 1000000
                   },
+                  "imageUrl": {
+                    "anyOf": [
+                      {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "const": ""
+                          },
+                          {
+                            "type": "string",
+                            "maxLength": 500,
+                            "format": "uri"
+                          }
+                        ]
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
                   "categoryIds": {
                     "maxItems": 10,
                     "type": "array",
@@ -1916,6 +1936,26 @@
                     "type": "integer",
                     "minimum": 0,
                     "maximum": 1000000
+                  },
+                  "imageUrl": {
+                    "anyOf": [
+                      {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "const": ""
+                          },
+                          {
+                            "type": "string",
+                            "maxLength": 500,
+                            "format": "uri"
+                          }
+                        ]
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
                   },
                   "categoryIds": {
                     "maxItems": 10,

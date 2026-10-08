@@ -66,7 +66,33 @@
 
   /* Form controls */
   .input {
-    @apply block w-full border border-ink-950 bg-white px-3.5 py-2.5 text-sm text-ink-950 transition-colors duration-150 placeholder:text-ink-500 focus:border-cobalt-500 focus:outline-none focus:ring-2 focus:ring-cobalt-500 focus:ring-offset-0 disabled:bg-mist-100;
+    @apply block min-h-[44px] w-full rounded-none border border-ink-950 bg-white px-3.5 py-2.5 text-sm text-ink-950 transition-colors duration-150 placeholder:text-ink-500 focus:border-cobalt-500 focus:outline-none focus:ring-2 focus:ring-cobalt-500 focus:ring-offset-0 disabled:bg-mist-100;
+  }
+
+  /* One look for every control: native select arrows and number spinners are
+     replaced so browsers cannot round the corners or change the height. */
+  select.input {
+    @apply cursor-pointer appearance-none bg-[length:16px_16px] bg-[right_0.75rem_center] bg-no-repeat pr-10;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230A0A0B' stroke-width='2' stroke-linecap='square'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  }
+
+  select.input:disabled {
+    @apply cursor-not-allowed opacity-60;
+  }
+
+  input[type='number'].input {
+    appearance: textfield;
+    -moz-appearance: textfield;
+  }
+
+  input[type='number'].input::-webkit-outer-spin-button,
+  input[type='number'].input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  textarea.input {
+    @apply resize-y;
   }
 
   .label {

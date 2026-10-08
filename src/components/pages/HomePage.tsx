@@ -304,10 +304,10 @@ export default function HomePage({ showToast, updateCartCount }: HomePageProps) 
           data-testid="books-loading"
           aria-busy="true"
           aria-label="Loading books"
-          className="grid grid-cols-1 border-l border-t-2 border-ink-950 sm:grid-cols-2 lg:grid-cols-3"
+          className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3"
         >
           {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="border-b border-r border-mist-200">
+            <div key={i} className="border border-mist-200">
               <div className="skeleton aspect-[6/5] w-full" />
               <div className="space-y-3 p-5">
                 <div className="skeleton h-5 w-24" />
@@ -353,7 +353,7 @@ export default function HomePage({ showToast, updateCartCount }: HomePageProps) 
           <div
             data-testid="books-grid"
             aria-busy={loading}
-            className={`grid grid-cols-1 border-l border-t border-mist-200 transition-opacity duration-150 sm:grid-cols-2 lg:grid-cols-3 ${
+            className={`grid grid-cols-1 gap-6 transition-opacity duration-150 sm:grid-cols-2 lg:grid-cols-3 ${
               loading ? 'opacity-50' : ''
             }`}
           >

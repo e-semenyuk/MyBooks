@@ -1,3 +1,7 @@
+'use client'
+
+import { useState } from 'react'
+
 // Generative cover art: flat geometric compositions picked from the book id.
 // Carries no text, so a title is never in the page twice.
 const PALETTES = [
@@ -67,10 +71,15 @@ interface BookCoverProps {
   title?: string
   coverUrl?: string | null
   size?: 'md' | 'sm'
+  // Taller frame for the book page
+  tall?: boolean
   className?: string
 }
 
-export default function BookCover({ id, coverUrl, size = 'md', className = '' }: BookCoverProps) {
+export default function BookCover({ id, coverUrl, size = 'md', tall = false, className = '' }: BookCoverProps) {
+  // A picture that fails to load (broken link, offline) falls back to the generated art
+  const [failed, setFailed] = useState(false)
+  const showImage = Boolean(coverUrl) && !failed
   const n = Math.abs(id)
   const palette = PALETTES[(n * 5 + 1) % PALETTES.length]
   const composition = COMPOSITIONS[n % COMPOSITIONS.length]
@@ -79,14 +88,22 @@ export default function BookCover({ id, coverUrl, size = 'md', className = '' }:
     <div
       aria-hidden="true"
       className={`relative shrink-0 overflow-hidden ${
-        size === 'sm' ? 'h-[70px] w-14' : 'aspect-[6/5] w-full'
+        size === 'sm' ? 'h-[70px] w-14' : tall ? 'aspect-[4/5] w-full' : 'aspect-[6/5] w-full'
       } ${className}`}
-      style={{ backgroundColor: palette.bg }}
+      style={{ backgroundColor: showImage ? '#EEF0F3' : palette.bg }}
     >
-      {coverUrl ? (
+      {showImage ? (
         // Decorative: the title is in the text next to the cover
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={coverUrl} alt="" loading="lazy" data-testid={`book-cover-image-${id}`} className="h-full w-full object-cover" />
+        <img
+          src={coverUrl!}
+          alt=""
+          loading="lazy"
+          referrerPolicy="no-referrer"
+          onError={() => setFailed(true)}
+          data-testid={`book-cover-image-${id}`}
+          className={`h-full w-full object-contain ${size === 'sm' ? 'p-0.5' : 'p-5'}`}
+        />
       ) : (
         <svg viewBox="0 0 100 125" preserveAspectRatio="xMidYMid slice" className="h-full w-full">
           {composition(palette)}

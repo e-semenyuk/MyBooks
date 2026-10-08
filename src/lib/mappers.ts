@@ -18,12 +18,13 @@ type BookRowWithCategories = BookRow & {
 }
 
 export function mapBook(row: BookRowWithCategories): Book {
-  const { priceCents, categories, cover, ...rest } = row
+  const { priceCents, categories, cover, imageUrl, ...rest } = row
   return {
     ...rest,
     price: fromCents(priceCents),
+    // An uploaded cover wins over a linked picture
     ...(cover !== undefined
-      ? { coverUrl: cover ? `/api/books/${row.id}/cover?v=${cover.updatedAt.getTime()}` : null }
+      ? { coverUrl: cover ? `/api/books/${row.id}/cover?v=${cover.updatedAt.getTime()}` : imageUrl }
       : {}),
     ...(categories ? { categories: categories.map((link) => link.category).sort((a, b) => a.name.localeCompare(b.name)) } : {}),
   }

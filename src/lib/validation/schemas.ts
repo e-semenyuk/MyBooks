@@ -27,6 +27,10 @@ export const createBookSchema = z.object({
   price: money,
   description: z.string().max(5000, 'Description must be at most 5000 characters').nullish().transform((v) => v ?? undefined),
   stockQuantity: stock,
+  // Link to a cover picture; an empty value or null removes it
+  imageUrl: z
+    .union([z.literal('').transform(() => null), z.url({ protocol: /^https?$/, error: 'Image link must be an http or https URL' }).max(500, 'Image link is too long')])
+    .nullish(),
   categoryIds: z.array(z.number().int().positive()).max(10, 'At most 10 categories').optional(),
 })
 

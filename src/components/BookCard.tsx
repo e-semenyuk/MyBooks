@@ -8,8 +8,7 @@ interface BookCardProps {
   onAddToCart: (bookId: number) => void
 }
 
-// One cell of the catalog grid. The grid draws the outer rules; the cell draws
-// its right and bottom edge so cells share borders.
+// One card of the catalog grid: a hairline frame that turns black on hover.
 export default function BookCard({ book, onAddToCart }: BookCardProps) {
   const isOutOfStock = book.stockQuantity === 0
   const isLowStock = book.stockQuantity > 0 && book.stockQuantity <= 5
@@ -17,7 +16,7 @@ export default function BookCard({ book, onAddToCart }: BookCardProps) {
   return (
     <article
       data-testid={`book-card-${book.id}`}
-      className="group flex h-full flex-col border-b border-r border-mist-200 bg-white"
+      className="group flex h-full flex-col border border-mist-200 bg-white transition-colors duration-150 hover:border-ink-950"
     >
       <BookCover id={book.id} title={book.title} coverUrl={book.coverUrl} />
 

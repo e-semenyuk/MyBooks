@@ -114,7 +114,7 @@ export default function AdminAudit({ showToast }: { showToast: (message: string,
         </div>
       ) : (
         <>
-          <div className="overflow-x-auto">
+          <div className="relative overflow-x-auto">
             <table data-testid="admin-audit-table" className="data-table">
               <thead>
                 <tr>
